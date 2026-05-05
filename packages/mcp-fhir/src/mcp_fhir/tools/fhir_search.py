@@ -1,9 +1,13 @@
-"""Tool: fhir_search — search a FHIR resource type with optional parameters."""
+"""Tool: fhir_search — search a FHIR resource type with optional parameters.
+
+Also exposes fhir_search_next for following Bundle pagination links.
+"""
 
 from __future__ import annotations
 
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 import structlog
@@ -49,6 +53,8 @@ async def fhir_search(
 
     Returns:
         A FHIR Bundle (type = searchset) as a JSON-serialisable dict.
+        The bundle will include a ``_next_url`` key when more pages exist;
+        pass that value to ``fhir_search_next`` to retrieve the next page.
     """
     resource_type = resource_type.strip()
     if not _RESOURCE_TYPE_RE.match(resource_type):
@@ -68,4 +74,64 @@ async def fhir_search(
                 headers={"Accept": "application/fhir+json"},
             )
             response.raise_for_status()
-            return response.json()  # type: ignore[no-any-return]
+            bundle: dict[str, Any] = response.json()
+
+    # Attach pagination helper key so the LLM knows there are more pages.
+    next_url = _extract_next_link(bundle)
+    if next_url:
+        bundle["_next_url"] = next_url
+    return bundle
+
+
+def _extract_next_link(bundle: dict[str, Any]) -> str | None:
+    """Return the ``next`` relation URL from a FHIR Bundle link array, or None."""
+    for link in bundle.get("link") or []:
+        if link.get("relation") == "next":
+            raw = link.get("url", "")
+            # Validate it is actually an HTTP(S) URL before surfacing it.
+            parsed = urlparse(raw)
+            if parsed.scheme in ("http", "https") and parsed.netloc:
+                return raw
+    return None
+
+
+async def fhir_search_next(next_url: str) -> dict[str, Any]:
+    """Follow a pagination link from a previous ``fhir_search`` Bundle.
+
+    Args:
+        next_url: The ``_next_url`` value returned by a previous search.
+                  Must be an absolute HTTP(S) URL from the same FHIR server.
+
+    Returns:
+        The next Bundle page, also with ``_next_url`` if further pages exist.
+
+    Raises:
+        ValueError: If ``next_url`` is not a valid absolute HTTP(S) URL or
+                    points to a different host than the configured FHIR server.
+    """
+    parsed = urlparse(next_url)
+    configured = urlparse(settings.fhir_base_url)
+
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ValueError("next_url must be an absolute HTTP(S) URL")
+
+    # SSRF guard: next_url host must match the configured FHIR server host.
+    if parsed.netloc != configured.netloc:
+        raise ValueError(
+            f"next_url host {parsed.netloc!r} does not match configured "
+            f"FHIR server {configured.netloc!r}"
+        )
+
+    with span("fhir_search_next", url=next_url):
+        log.info("fhir_search_next", url=next_url)
+        async with httpx.AsyncClient(timeout=settings.fhir_timeout_s) as client:
+            response = await client.get(
+                next_url, headers={"Accept": "application/fhir+json"}
+            )
+            response.raise_for_status()
+            bundle: dict[str, Any] = response.json()
+
+    next2 = _extract_next_link(bundle)
+    if next2:
+        bundle["_next_url"] = next2
+    return bundle

@@ -1,18 +1,23 @@
 [project]
 name = "mcp-fhir"
-version = "0.1.0"
-description = "FHIR R4 MCP server with built-in HAPI profile validation"
+version = "1.0.0"
+description = "FHIR R4 MCP server — read, search, validate resources + US Core / IPS profile checks"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 authors = [{ name = "fhir-mcp-suite contributors" }]
-keywords = ["mcp", "fhir", "hl7", "healthcare", "ai"]
+keywords = ["mcp", "fhir", "hl7", "healthcare", "ai", "llm", "clinical-ai", "us-core", "ips"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
     "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 dependencies = [
     "mcp[cli]>=1.6",
@@ -30,6 +35,8 @@ mcp-fhir = "mcp_fhir.server:main"
 Homepage = "https://github.com/pcmedsinge/fhir-mcp-suite"
 Repository = "https://github.com/pcmedsinge/fhir-mcp-suite"
 "Bug Tracker" = "https://github.com/pcmedsinge/fhir-mcp-suite/issues"
+Documentation = "https://pcmedsinge.github.io/fhir-mcp-suite/"
+Changelog = "https://github.com/pcmedsinge/fhir-mcp-suite/releases"
 
 [build-system]
 requires = ["hatchling"]

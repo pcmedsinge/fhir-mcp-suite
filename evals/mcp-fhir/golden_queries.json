@@ -1,8 +1,217 @@
 [
   {
-    "id": "fhir_read_patient_basic",
-    "description": "Read a Patient resource — expect resourceType=Patient in response",
+    "id": "cap_001_fhir_version",
+    "description": "CapabilityStatement — programmatic check: fhir_version starts with 4.0",
+    "tool": "fhir_capabilities",
+    "input": {},
+    "expected": {},
+    "tags": ["smoke", "capabilities"],
+    "notes": "Checked in runner: result['fhir_version'].startswith('4.0')"
+  },
+  {
+    "id": "cap_002_resource_count",
+    "description": "CapabilityStatement — at least 10 resource types reported",
+    "tool": "fhir_capabilities",
+    "input": {},
+    "expected": {},
+    "tags": ["capabilities"],
+    "notes": "Checked in runner: result['resource_count'] >= 10"
+  },
+
+  {
+    "id": "read_001_patient_resource_type",
+    "description": "fhir_read Patient example — resourceType=Patient",
     "tool": "fhir_read",
+    "input": {"resource_type": "Patient", "resource_id": "example"},
+    "expected": {"resourceType": "Patient"},
+    "tags": ["smoke", "fhir_read"]
+  },
+  {
+    "id": "read_002_observation_resource_type",
+    "description": "fhir_read Observation example — resourceType=Observation",
+    "tool": "fhir_read",
+    "input": {"resource_type": "Observation", "resource_id": "example"},
+    "expected": {"resourceType": "Observation"},
+    "tags": ["fhir_read"]
+  },
+
+  {
+    "id": "search_001_patient_bundle",
+    "description": "fhir_search Patient — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "Patient", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle", "type": "searchset"},
+    "tags": ["smoke", "fhir_search"]
+  },
+  {
+    "id": "search_002_observation_bundle",
+    "description": "fhir_search Observation — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "Observation", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle"},
+    "tags": ["fhir_search"]
+  },
+  {
+    "id": "search_003_condition_bundle",
+    "description": "fhir_search Condition — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "Condition", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle"},
+    "tags": ["fhir_search"]
+  },
+  {
+    "id": "search_004_medication_request_bundle",
+    "description": "fhir_search MedicationRequest — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "MedicationRequest", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle"},
+    "tags": ["fhir_search"]
+  },
+  {
+    "id": "search_005_encounter_bundle",
+    "description": "fhir_search Encounter — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "Encounter", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle"},
+    "tags": ["fhir_search"]
+  },
+  {
+    "id": "search_006_allergy_intolerance_bundle",
+    "description": "fhir_search AllergyIntolerance — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "AllergyIntolerance", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle"},
+    "tags": ["fhir_search"]
+  },
+  {
+    "id": "search_007_patient_by_family_name",
+    "description": "fhir_search Patient family=Smith — returns searchset Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "Patient", "params": {"family": "Smith", "_count": "5"}},
+    "expected": {"resourceType": "Bundle", "type": "searchset"},
+    "tags": ["fhir_search", "params"]
+  },
+  {
+    "id": "search_008_immunization_bundle",
+    "description": "fhir_search Immunization — returns Bundle",
+    "tool": "fhir_search",
+    "input": {"resource_type": "Immunization", "params": {"_count": "5"}},
+    "expected": {"resourceType": "Bundle"},
+    "tags": ["fhir_search"]
+  },
+
+  {
+    "id": "validate_001_minimal_patient_base",
+    "description": "Minimal Patient — base R4 conformant",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {"resourceType": "Patient", "id": "example"},
+      "profile": ""
+    },
+    "expected": {"is_conformant": true},
+    "tags": ["smoke", "validate", "base"]
+  },
+  {
+    "id": "validate_002_us_core_patient_missing_identifier",
+    "description": "US Core Patient without identifier — must fail",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {"resourceType": "Patient", "id": "bad"},
+      "profile": "us-core-patient"
+    },
+    "expected": {"is_conformant": false},
+    "tags": ["validate", "us-core"]
+  },
+  {
+    "id": "validate_003_us_core_patient_with_identifier",
+    "description": "US Core Patient with identifier + name + gender — conformant",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "us-core-ok",
+        "identifier": [{"system": "http://example.org/mrn", "value": "12345"}],
+        "name": [{"family": "Smith", "given": ["John"]}],
+        "gender": "male"
+      },
+      "profile": "us-core-patient"
+    },
+    "expected": {"is_conformant": true},
+    "tags": ["validate", "us-core"]
+  },
+  {
+    "id": "validate_004_obs_missing_fields_fails_us_core",
+    "description": "Observation missing status/code/subject — fails us-core-observation",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {"resourceType": "Observation", "id": "bad-obs"},
+      "profile": "us-core-observation"
+    },
+    "expected": {"is_conformant": false},
+    "tags": ["validate", "us-core"]
+  },
+  {
+    "id": "validate_005_valid_observation_base",
+    "description": "Well-formed Observation with status+code+subject — base R4 conformant",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-ok",
+        "status": "final",
+        "code": {
+          "coding": [{"system": "http://loinc.org", "code": "8302-2", "display": "Body Height"}]
+        },
+        "subject": {"reference": "Patient/example"},
+        "valueQuantity": {
+          "value": 170, "unit": "cm",
+          "system": "http://unitsofmeasure.org", "code": "cm"
+        }
+      },
+      "profile": ""
+    },
+    "expected": {"is_conformant": true},
+    "tags": ["validate", "base"]
+  },
+  {
+    "id": "validate_006_invalid_resource_type_fails",
+    "description": "Resource with unknown resourceType — not conformant",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {"resourceType": "NotARealType", "id": "x"},
+      "profile": ""
+    },
+    "expected": {"is_conformant": false},
+    "tags": ["validate", "error-case"]
+  },
+  {
+    "id": "validate_007_error_count_field_present",
+    "description": "ValidationReport always has error_count + issues keys",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {"resourceType": "Patient", "id": "x"},
+      "profile": ""
+    },
+    "expected": {},
+    "tags": ["validate"],
+    "notes": "Checked in runner: 'error_count' in result and 'issues' in result"
+  },
+  {
+    "id": "validate_008_us_core_condition_missing_code_fails",
+    "description": "Condition without code — fails us-core-condition",
+    "tool": "validate_against_profile",
+    "input": {
+      "resource": {
+        "resourceType": "Condition",
+        "id": "cond-bad",
+        "subject": {"reference": "Patient/example"}
+      },
+      "profile": "us-core-condition"
+    },
+    "expected": {"is_conformant": false},
+    "tags": ["validate", "us-core"]
+  }
+]
     "input": {"resource_type": "Patient", "resource_id": "example"},
     "expected": {"resourceType": "Patient"},
     "tags": ["smoke", "fhir_read"]

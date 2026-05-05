@@ -1,8 +1,10 @@
 """mcp-fhir server entrypoint.
 
-Registers three MCP tools:
-  - fhir_read           — read a single FHIR resource
-  - fhir_search         — search a FHIR resource type
+Registers five MCP tools:
+  - fhir_capabilities        — CapabilityStatement summary (what the server supports)
+  - fhir_read                — read a single FHIR resource
+  - fhir_search              — search a FHIR resource type
+  - fhir_search_next         — follow a Bundle pagination link
   - validate_against_profile — validate a resource against a HAPI-backed profile
 
 Transport is selected via the MCP_TRANSPORT env var (default: stdio).
@@ -10,7 +12,12 @@ Transport is selected via the MCP_TRANSPORT env var (default: stdio).
 
 from __future__ import annotations
 
+import json
+import time
+import uuid
+
 import anyio
+import structlog
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
@@ -20,16 +27,18 @@ from mcp.types import (
     Tool,
 )
 
-import structlog
-
+from fhir_mcp_shared.langfuse import trace as lf_trace
 from fhir_mcp_shared.logging import configure_logging
 
 from mcp_fhir.settings import settings
+from mcp_fhir.tools.fhir_capabilities import fhir_capabilities
 from mcp_fhir.tools.fhir_read import fhir_read
-from mcp_fhir.tools.fhir_search import fhir_search
+from mcp_fhir.tools.fhir_search import fhir_search, fhir_search_next
 from mcp_fhir.tools.validate_profile import validate_against_profile
 
-import json
+# Stable session ID for the lifetime of this server process.
+# Groups all tool calls from one MCP session in LangFuse.
+_SESSION_ID: str = str(uuid.uuid4())
 
 log = structlog.get_logger(__name__)
 
@@ -40,6 +49,15 @@ def _build_server() -> Server:
     @server.list_tools()
     async def list_tools() -> list[Tool]:
         return [
+            Tool(
+                name="fhir_capabilities",
+                description=(
+                    "Retrieve a summary of the FHIR server's CapabilityStatement: "
+                    "FHIR version, software, supported resource types, and available "
+                    "search parameters. Call this first to understand what the server supports."
+                ),
+                inputSchema={"type": "object", "properties": {}},
+            ),
             Tool(
                 name="fhir_read",
                 description=(
@@ -119,35 +137,86 @@ def _build_server() -> Server:
                     "required": ["resource"],
                 },
             ),
+            Tool(
+                name="fhir_search_next",
+                description=(
+                    "Follow a Bundle pagination link returned by fhir_search. "
+                    "Pass the '_next_url' value from the previous search result. "
+                    "Returns the next page as a FHIR Bundle, again with '_next_url' "
+                    "if more pages exist."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "next_url": {
+                            "type": "string",
+                            "description": "The '_next_url' from a previous fhir_search Bundle.",
+                        }
+                    },
+                    "required": ["next_url"],
+                },
+            ),
         ]
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:  # type: ignore[type-arg]
-        log.info("tool_call", tool=name)
-        try:
-            if name == "fhir_read":
-                result = await fhir_read(
-                    resource_type=arguments["resource_type"],
-                    resource_id=arguments["resource_id"],
-                )
-            elif name == "fhir_search":
-                result = await fhir_search(
-                    resource_type=arguments["resource_type"],
-                    params=arguments.get("params"),
-                )
-            elif name == "validate_against_profile":
-                result = await validate_against_profile(
-                    resource=arguments["resource"],
-                    profile=arguments.get("profile", ""),
-                    fhir_version=arguments.get("fhir_version", "4.0.1"),
-                )
-            else:
-                raise ValueError(f"Unknown tool: {name!r}")
-        except Exception as exc:
-            log.error("tool_error", tool=name, error=str(exc))
-            return [TextContent(type="text", text=f"Error: {exc}")]
+        call_id = str(uuid.uuid4())
+        log.info("tool_call", tool=name, call_id=call_id, session_id=_SESSION_ID)
+        t0 = time.perf_counter()
 
-        return [TextContent(type="text", text=json.dumps(result, indent=2))]
+        with lf_trace(
+            name=name,
+            session_id=_SESSION_ID,
+            tags=["mcp-fhir", name],
+            call_id=call_id,
+            server_version="1.0.0",
+        ) as tr:
+            try:
+                if name == "fhir_capabilities":
+                    result = await fhir_capabilities()
+                elif name == "fhir_read":
+                    result = await fhir_read(
+                        resource_type=arguments["resource_type"],
+                        resource_id=arguments["resource_id"],
+                    )
+                elif name == "fhir_search":
+                    result = await fhir_search(
+                        resource_type=arguments["resource_type"],
+                        params=arguments.get("params"),
+                    )
+                elif name == "validate_against_profile":
+                    result = await validate_against_profile(
+                        resource=arguments["resource"],
+                        profile=arguments.get("profile", ""),
+                        fhir_version=arguments.get("fhir_version", "4.0.1"),
+                    )
+                elif name == "fhir_search_next":
+                    result = await fhir_search_next(next_url=arguments["next_url"])
+                else:
+                    raise ValueError(f"Unknown tool: {name!r}")
+
+                latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+                payload = json.dumps(result, indent=2)
+                if tr:
+                    tr.update(
+                        output={"response_bytes": len(payload), "latency_ms": latency_ms}
+                    )
+                log.info(
+                    "tool_ok",
+                    tool=name,
+                    call_id=call_id,
+                    latency_ms=latency_ms,
+                    response_bytes=len(payload),
+                )
+                return [TextContent(type="text", text=payload)]
+
+            except Exception as exc:
+                latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+                if tr:
+                    tr.update(output={"error": str(exc), "latency_ms": latency_ms})
+                log.error("tool_error", tool=name, call_id=call_id,
+                          latency_ms=latency_ms, error=str(exc))
+                return [TextContent(type="text", text=f"Error: {exc}")]
 
     return server
 
@@ -159,7 +228,7 @@ async def _run_stdio(server: Server) -> None:
             write_stream,
             InitializationOptions(
                 server_name="mcp-fhir",
-                server_version="0.1.0",
+                server_version="1.0.0",
                 capabilities=server.get_capabilities(
                     notification_options=None,  # type: ignore[arg-type]
                     experimental_capabilities={},
@@ -192,7 +261,7 @@ async def _run_sse(server: Server) -> None:
                 streams[1],
                 InitializationOptions(
                     server_name="mcp-fhir",
-                    server_version="0.1.0",
+                    server_version="1.0.0",
                     capabilities=server.get_capabilities(
                         notification_options=None,  # type: ignore[arg-type]
                         experimental_capabilities={},
@@ -220,7 +289,7 @@ async def _run_sse(server: Server) -> None:
 def main() -> None:
     """Entry point for ``mcp-fhir`` CLI."""
     configure_logging(level=settings.log_level, fmt=settings.log_format)
-    log.info("mcp_fhir_starting", transport=settings.mcp_transport, version="0.1.0")
+    log.info("mcp_fhir_starting", transport=settings.mcp_transport, version="1.0.0", session_id=_SESSION_ID)
     server = _build_server()
 
     if settings.mcp_transport == "sse":
