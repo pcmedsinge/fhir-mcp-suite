@@ -1,7 +1,7 @@
 [project]
 name = "mcp-fhir"
-version = "1.0.0"
-description = "FHIR R4 MCP server — read, search, validate resources + US Core / IPS profile checks"
+version = "1.1.0"
+description = "FHIR R4 MCP server — read, search, validate resources + SMART-on-FHIR auth (Epic/Cerner sandbox)"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

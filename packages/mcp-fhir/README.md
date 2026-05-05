@@ -1,6 +1,7 @@
 # mcp-fhir
 
-> FHIR R4 MCP server — read, search, paginate, and validate resources against US Core/IPS profiles.  
+> FHIR R4 MCP server — read, search, paginate, validate resources against US Core/IPS profiles,
+> and authenticate against Epic/Cerner EHR sandboxes via SMART-on-FHIR OAuth 2.0.  
 > Part of the [fhir-mcp-suite](https://github.com/pcmedsinge/fhir-mcp-suite) monorepo.
 
 [![PyPI](https://img.shields.io/pypi/v/mcp-fhir)](https://pypi.org/project/mcp-fhir/)
@@ -103,6 +104,84 @@ All settings via environment variables (see [`.env.example`](../../.env.example)
 | `LOG_FORMAT` | `json` | `json` (prod) or `console` (dev) |
 | `LANGFUSE_PUBLIC_KEY` | _(unset)_ | LangFuse observability (optional) |
 | `LANGFUSE_SECRET_KEY` | _(unset)_ | LangFuse observability (optional) |
+
+## SMART-on-FHIR authentication
+
+`mcp-fhir` v1.1.0 adds SMART-on-FHIR **backend services** (`client_credentials` grant, RFC 6749)
+so the server can authenticate against real Epic / Cerner sandboxes — no browser redirect needed.
+
+When `SMART_ENABLED=true`, every FHIR request gets an `Authorization: Bearer <token>` header.
+Tokens are cached in-process and refreshed automatically 30 s before expiry.
+
+### SMART environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SMART_ENABLED` | `false` | Set `true` to activate SMART auth |
+| `SMART_CLIENT_ID` | `""` | App client ID from EHR registration portal |
+| `SMART_CLIENT_SECRET` | `""` | Client secret (stored as `SecretStr`, never logged) |
+| `SMART_TOKEN_URL` | `""` | Token endpoint URL; auto-discovered if blank |
+| `SMART_SCOPES` | `system/*.read` | Space-separated OAuth 2.0 scopes |
+| `SMART_GRANT_TYPE` | `client_credentials` | OAuth grant type (only `client_credentials` supported) |
+| `SMART_TOKEN_TIMEOUT_S` | `15.0` | HTTP timeout for token requests |
+
+When `SMART_TOKEN_URL` is blank the server performs SMART auto-discovery:  
+`GET {FHIR_BASE_URL}/.well-known/smart-configuration → token_endpoint`.  
+Falls back to `{FHIR_BASE_URL}/oauth2/token` if discovery returns a non-200.
+
+### Epic sandbox quick-start
+
+1. Register at <https://fhir.epic.com/> → **My Apps** → create a backend-services app.
+2. Note your **Client ID** and **Client Secret**.
+3. Create `.env` in the monorepo root (already in `.gitignore`):
+
+```dotenv
+FHIR_BASE_URL=https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
+SMART_ENABLED=true
+SMART_CLIENT_ID=your-epic-client-id
+SMART_CLIENT_SECRET=your-epic-client-secret
+# SMART_TOKEN_URL is optional — auto-discovered from FHIR_BASE_URL
+```
+
+### Cerner sandbox quick-start
+
+1. Register at <https://code.cerner.com/> → create a backend-services app.
+2. Note your **Client ID** and the token endpoint URL.
+3. Update `.env`:
+
+```dotenv
+FHIR_BASE_URL=https://fhir-ehr-code.cerner.com/r4/your-tenant-id
+SMART_ENABLED=true
+SMART_CLIENT_ID=your-cerner-client-id
+SMART_CLIENT_SECRET=your-cerner-client-secret
+SMART_TOKEN_URL=https://authorization.cerner.com/tenants/your-tenant-id/protocols/oauth2/profiles/smart-v1/token
+```
+
+### Claude Desktop config with SMART auth
+
+```json
+{
+  "mcpServers": {
+    "mcp-fhir": {
+      "command": "uvx",
+      "args": ["mcp-fhir"],
+      "env": {
+        "FHIR_BASE_URL": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+        "SMART_ENABLED": "true",
+        "SMART_CLIENT_ID": "your-epic-client-id",
+        "SMART_CLIENT_SECRET": "your-epic-client-secret"
+      }
+    }
+  }
+}
+```
+
+### Running SMART integration tests
+
+```bash
+# Requires real sandbox credentials in .env
+uv run pytest packages/mcp-fhir/tests -m smart_integration -v
+```
 
 ## Profile validation
 

@@ -6,7 +6,7 @@ configuration (pointing at public HAPI demo servers).
 
 from __future__ import annotations
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +45,43 @@ class Settings(BaseSettings):
     langfuse_public_key: str = Field(default="")
     langfuse_secret_key: str = Field(default="")
     langfuse_host: str = Field(default="https://cloud.langfuse.com")
+
+    # ── SMART-on-FHIR auth (v1.1) ────────────────────────────────────────────
+    smart_enabled: bool = Field(
+        default=False,
+        description=(
+            "Enable SMART-on-FHIR authentication. When True, a Bearer token is "
+            "added to every FHIR request. Requires smart_client_id + "
+            "smart_client_secret + smart_token_url (or auto-discovery)."
+        ),
+    )
+    smart_client_id: str = Field(
+        default="",
+        description="SMART app client ID (from Epic/Cerner app registration).",
+    )
+    smart_client_secret: SecretStr = Field(
+        default=SecretStr(""),
+        description="SMART app client secret.",
+    )
+    smart_token_url: str = Field(
+        default="",
+        description=(
+            "OAuth 2.0 token endpoint URL. "
+            "Leave empty to auto-discover from {fhir_base_url}/.well-known/smart-configuration."
+        ),
+    )
+    smart_scopes: str = Field(
+        default="system/*.read",
+        description="Space-separated OAuth scopes for client_credentials grant.",
+    )
+    smart_grant_type: str = Field(
+        default="client_credentials",
+        description="OAuth grant type: 'client_credentials' (default) or 'authorization_code'.",
+    )
+    smart_token_timeout_s: float = Field(
+        default=15.0,
+        description="HTTP timeout for SMART token requests.",
+    )
 
 
 settings = Settings()

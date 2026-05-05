@@ -9,6 +9,7 @@ import structlog
 
 from fhir_mcp_shared.langfuse import span
 
+from mcp_fhir.http_client import get_fhir_headers
 from mcp_fhir.settings import settings
 
 log = structlog.get_logger(__name__)
@@ -31,8 +32,9 @@ async def fhir_capabilities() -> dict[str, Any]:
 
     with span("fhir_capabilities"):
         log.info("fhir_capabilities", url=url)
+        headers = await get_fhir_headers()
         async with httpx.AsyncClient(timeout=settings.fhir_timeout_s) as client:
-            response = await client.get(url, headers={"Accept": "application/fhir+json"})
+            response = await client.get(url, headers=headers)
             response.raise_for_status()
             cap: dict[str, Any] = response.json()
 

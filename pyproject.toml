@@ -39,4 +39,5 @@ addopts = "-ra --strict-markers"
 markers = [
     "integration: requires external services (HAPI, FHIR server)",
     "eval: long-running golden-query eval suite",
+    "smart_integration: requires SMART sandbox credentials in .env (SMART_ENABLED=true)",
 ]

@@ -14,6 +14,7 @@ import structlog
 
 from fhir_mcp_shared.langfuse import span
 
+from mcp_fhir.http_client import get_fhir_headers
 from mcp_fhir.settings import settings
 
 log = structlog.get_logger(__name__)
@@ -67,11 +68,12 @@ async def fhir_search(
 
     with span("fhir_search", resource_type=resource_type, params=safe_params):
         log.info("fhir_search", url=url, params=safe_params)
+        headers = await get_fhir_headers()
         async with httpx.AsyncClient(timeout=settings.fhir_timeout_s) as client:
             response = await client.get(
                 url,
                 params=safe_params,
-                headers={"Accept": "application/fhir+json"},
+                headers=headers,
             )
             response.raise_for_status()
             bundle: dict[str, Any] = response.json()
@@ -124,10 +126,9 @@ async def fhir_search_next(next_url: str) -> dict[str, Any]:
 
     with span("fhir_search_next", url=next_url):
         log.info("fhir_search_next", url=next_url)
+        headers = await get_fhir_headers()
         async with httpx.AsyncClient(timeout=settings.fhir_timeout_s) as client:
-            response = await client.get(
-                next_url, headers={"Accept": "application/fhir+json"}
-            )
+            response = await client.get(next_url, headers=headers)
             response.raise_for_status()
             bundle: dict[str, Any] = response.json()
 
