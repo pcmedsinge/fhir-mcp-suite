@@ -1,6 +1,6 @@
 [project]
 name = "mcp-terminology"
-version = "0.1.0"
+version = "1.0.0"
 description = "Unified LOINC / SNOMED / RxNorm / ICD-10 MCP server"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -8,7 +8,7 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "fhir-mcp-suite contributors" }]
 keywords = ["mcp", "terminology", "loinc", "snomed", "rxnorm", "icd", "healthcare"]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.12",
@@ -30,6 +30,8 @@ mcp-terminology = "mcp_terminology.server:main"
 Homepage = "https://github.com/pcmedsinge/fhir-mcp-suite"
 Repository = "https://github.com/pcmedsinge/fhir-mcp-suite"
 "Bug Tracker" = "https://github.com/pcmedsinge/fhir-mcp-suite/issues"
+Changelog = "https://github.com/pcmedsinge/fhir-mcp-suite/blob/main/packages/mcp-terminology/CHANGELOG.md"
+Documentation = "https://github.com/pcmedsinge/fhir-mcp-suite/blob/main/packages/mcp-terminology/README.md"
 
 [build-system]
 requires = ["hatchling"]

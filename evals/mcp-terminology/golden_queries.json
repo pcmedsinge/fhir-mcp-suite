@@ -1,1 +1,259 @@
-[]
+[
+  {
+    "id": "lookup-001",
+    "description": "Look up LOINC body height (8302-2)",
+    "tool": "lookup_code",
+    "tags": ["smoke", "lookup"],
+    "input": { "system": "loinc", "code": "8302-2" },
+    "expected": {
+      "code": "8302-2",
+      "system_url": "http://loinc.org",
+      "display_contains": "height"
+    }
+  },
+  {
+    "id": "lookup-002",
+    "description": "Look up SNOMED diabetes mellitus (73211009)",
+    "tool": "lookup_code",
+    "tags": ["smoke", "lookup"],
+    "input": { "system": "snomed", "code": "73211009" },
+    "expected": {
+      "code": "73211009",
+      "system_url": "http://snomed.info/sct",
+      "display_contains": "diabetes"
+    }
+  },
+  {
+    "id": "lookup-003",
+    "description": "Look up RxNorm code 1049502",
+    "tool": "lookup_code",
+    "tags": ["lookup"],
+    "input": { "system": "rxnorm", "code": "1049502" },
+    "expected": {
+      "code": "1049502",
+      "system_url": "http://www.nlm.nih.gov/research/umls/rxnorm"
+    }
+  },
+  {
+    "id": "lookup-004",
+    "description": "Look up ICD-10-CM E11.9 (type 2 diabetes, uncomplicated)",
+    "tool": "lookup_code",
+    "tags": ["lookup"],
+    "input": { "system": "icd-10-cm", "code": "E11.9" },
+    "expected": {
+      "code": "E11.9",
+      "display_contains": "diabetes"
+    }
+  },
+  {
+    "id": "lookup-005",
+    "description": "Look up LOINC HbA1c (4548-4)",
+    "tool": "lookup_code",
+    "tags": ["lookup"],
+    "input": { "system": "loinc", "code": "4548-4" },
+    "expected": {
+      "code": "4548-4",
+      "display_contains": "hemoglobin"
+    }
+  },
+  {
+    "id": "search-001",
+    "description": "Search LOINC for body height — should include 8302-2",
+    "tool": "search_codes",
+    "tags": ["smoke", "search"],
+    "input": { "query": "body height", "system": "loinc", "max_results": 5 },
+    "expected": {
+      "total_gte": 1,
+      "first_contains_code": "8302-2"
+    }
+  },
+  {
+    "id": "search-002",
+    "description": "Search SNOMED for diabetes mellitus",
+    "tool": "search_codes",
+    "tags": ["search"],
+    "input": { "query": "diabetes mellitus", "system": "snomed", "max_results": 5 },
+    "expected": {
+      "total_gte": 1,
+      "any_display_contains": "diabetes"
+    }
+  },
+  {
+    "id": "search-003",
+    "description": "Search RxNorm for metformin",
+    "tool": "search_codes",
+    "tags": ["search"],
+    "input": { "query": "metformin", "system": "rxnorm", "max_results": 5 },
+    "expected": {
+      "total_gte": 1,
+      "any_display_contains": "metformin"
+    }
+  },
+  {
+    "id": "search-004",
+    "description": "Search SNOMED for hypertension",
+    "tool": "search_codes",
+    "tags": ["search"],
+    "input": { "query": "hypertension", "system": "snomed", "max_results": 3 },
+    "expected": {
+      "total_gte": 1,
+      "any_display_contains": "hypertension"
+    }
+  },
+  {
+    "id": "search-005",
+    "description": "Error: ICD-10-CM not supported for free-text search",
+    "tool": "search_codes",
+    "tags": ["error"],
+    "input": { "query": "fracture", "system": "icd-10-cm", "max_results": 5 },
+    "expected": {
+      "error_contains": "not supported"
+    }
+  },
+  {
+    "id": "search-006",
+    "description": "Error: empty query should be rejected",
+    "tool": "search_codes",
+    "tags": ["error"],
+    "input": { "query": "", "system": "loinc", "max_results": 5 },
+    "expected": {
+      "error_contains": "must not be empty"
+    }
+  },
+  {
+    "id": "translate-001",
+    "description": "Translate SNOMED diabetes (73211009) to ICD-10-CM",
+    "tool": "translate_code",
+    "tags": ["smoke", "translate"],
+    "input": {
+      "code": "73211009",
+      "source_system": "snomed",
+      "target_system": "icd-10-cm"
+    },
+    "expected": {
+      "result": true,
+      "target_system": "http://hl7.org/fhir/sid/icd-10-cm"
+    }
+  },
+  {
+    "id": "translate-002",
+    "description": "Translate SNOMED type 2 diabetes (44054006) to ICD-10-CM",
+    "tool": "translate_code",
+    "tags": ["translate"],
+    "input": {
+      "code": "44054006",
+      "source_system": "snomed",
+      "target_system": "icd-10-cm"
+    },
+    "expected": {
+      "result": true
+    }
+  },
+  {
+    "id": "translate-003",
+    "description": "Error: unknown source system rejected",
+    "tool": "translate_code",
+    "tags": ["error"],
+    "input": {
+      "code": "12345",
+      "source_system": "fake-system",
+      "target_system": "snomed"
+    },
+    "expected": {
+      "error_contains": "not a known alias"
+    }
+  },
+  {
+    "id": "translate-004",
+    "description": "Error: SQL injection in code field rejected",
+    "tool": "translate_code",
+    "tags": ["error"],
+    "input": {
+      "code": "'; DROP TABLE--",
+      "source_system": "snomed",
+      "target_system": "icd-10-cm"
+    },
+    "expected": {
+      "error_contains": "Invalid code"
+    }
+  },
+  {
+    "id": "expand-001",
+    "description": "Expand administrative-gender ValueSet — contains male",
+    "tool": "expand_valueset",
+    "tags": ["smoke", "expand"],
+    "input": {
+      "url": "http://hl7.org/fhir/ValueSet/administrative-gender"
+    },
+    "expected": {
+      "total_gte": 4,
+      "contains_code": "male"
+    }
+  },
+  {
+    "id": "expand-002",
+    "description": "Expand observation-status ValueSet — contains final",
+    "tool": "expand_valueset",
+    "tags": ["expand"],
+    "input": {
+      "url": "http://hl7.org/fhir/ValueSet/observation-status"
+    },
+    "expected": {
+      "total_gte": 5,
+      "contains_code": "final"
+    }
+  },
+  {
+    "id": "expand-003",
+    "description": "Expand administrative-gender with filter male",
+    "tool": "expand_valueset",
+    "tags": ["expand"],
+    "input": {
+      "url": "http://hl7.org/fhir/ValueSet/administrative-gender",
+      "filter": "male",
+      "max_results": 3
+    },
+    "expected": {
+      "total_gte": 1,
+      "any_display_contains": "male"
+    }
+  },
+  {
+    "id": "expand-004",
+    "description": "Error: file:// scheme rejected",
+    "tool": "expand_valueset",
+    "tags": ["error"],
+    "input": {
+      "url": "file:///etc/passwd"
+    },
+    "expected": {
+      "error_contains": "absolute HTTP"
+    }
+  },
+  {
+    "id": "expand-005",
+    "description": "Error: non-URL rejected",
+    "tool": "expand_valueset",
+    "tags": ["error"],
+    "input": {
+      "url": "not-a-url-at-all"
+    },
+    "expected": {
+      "error_contains": "absolute HTTP"
+    }
+  },
+  {
+    "id": "expand-006",
+    "description": "Expand v3-ActStatus ValueSet — contains active",
+    "tool": "expand_valueset",
+    "tags": ["expand"],
+    "input": {
+      "url": "http://terminology.hl7.org/ValueSet/v3-ActStatus",
+      "max_results": 10
+    },
+    "expected": {
+      "total_gte": 4,
+      "contains_code": "active"
+    }
+  }
+]

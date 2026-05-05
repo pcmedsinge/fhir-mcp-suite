@@ -1,6 +1,7 @@
-"""mcp-terminology — Unified LOINC/SNOMED/RxNorm/ICD-10 MCP server.
+"""mcp-terminology — unified LOINC/SNOMED/RxNorm/ICD-10 MCP server."""
 
-Status: coming Phase 3.3 (weeks 4-5).
-"""
+from mcp_terminology.server import main
+
+__version__ = "1.0.0"
 
 __version__ = "0.1.0"
