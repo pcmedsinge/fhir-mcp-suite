@@ -20,6 +20,7 @@ import anyio
 import structlog
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
+from mcp.server.lowlevel.server import NotificationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import (
     CallToolResult,
@@ -230,7 +231,7 @@ async def _run_stdio(server: Server) -> None:
                 server_name="mcp-fhir",
                 server_version="1.0.0",
                 capabilities=server.get_capabilities(
-                    notification_options=None,  # type: ignore[arg-type]
+                    notification_options=NotificationOptions(),
                     experimental_capabilities={},
                 ),
             ),
@@ -263,7 +264,7 @@ async def _run_sse(server: Server) -> None:
                     server_name="mcp-fhir",
                     server_version="1.0.0",
                     capabilities=server.get_capabilities(
-                        notification_options=None,  # type: ignore[arg-type]
+                        notification_options=NotificationOptions(),
                         experimental_capabilities={},
                     ),
                 ),
