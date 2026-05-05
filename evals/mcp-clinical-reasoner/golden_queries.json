@@ -1,1 +1,202 @@
-[]
+[
+  {
+    "id": "lookup_001",
+    "description": "Lookup metformin by name returns found=true with correct RxCUI",
+    "tool": "lookup_drug",
+    "input": {"name_or_rxcui": "metformin"},
+    "expected": {"found": true, "rxcui": "6809"},
+    "tags": ["smoke", "lookup", "integration"]
+  },
+  {
+    "id": "lookup_002",
+    "description": "Lookup metformin by RxCUI 6809 returns found=true",
+    "tool": "lookup_drug",
+    "input": {"name_or_rxcui": "6809"},
+    "expected": {"found": true, "rxcui": "6809"},
+    "tags": ["smoke", "lookup", "integration"]
+  },
+  {
+    "id": "lookup_003",
+    "description": "Lookup ibuprofen returns allergen_classes containing nsaid",
+    "tool": "lookup_drug",
+    "input": {"name_or_rxcui": "ibuprofen"},
+    "expected": {"found": true},
+    "tags": ["lookup", "integration", "allergen"]
+  },
+  {
+    "id": "lookup_004",
+    "description": "Lookup unknown drug returns found=false",
+    "tool": "lookup_drug",
+    "input": {"name_or_rxcui": "xyzimaginol"},
+    "expected": {"found": false},
+    "tags": ["lookup", "integration", "not_found"]
+  },
+  {
+    "id": "lookup_005",
+    "description": "Lookup with injection chars returns error",
+    "tool": "lookup_drug",
+    "input": {"name_or_rxcui": "<script>alert()</script>"},
+    "expected": {"error_contains": "invalid drug name"},
+    "tags": ["error", "security"]
+  },
+  {
+    "id": "lookup_006",
+    "description": "Lookup empty string returns error",
+    "tool": "lookup_drug",
+    "input": {"name_or_rxcui": ""},
+    "expected": {"error_contains": "must not be empty"},
+    "tags": ["error"]
+  },
+  {
+    "id": "interaction_001",
+    "description": "Known high-severity DDI: simvastatin + fluconazole",
+    "tool": "check_drug_interactions",
+    "input": {"rxcuis": ["36567", "4450"]},
+    "expected": {"has_high_severity": true},
+    "tags": ["smoke", "interactions", "integration"]
+  },
+  {
+    "id": "interaction_002",
+    "description": "Known interaction pair: warfarin + aspirin",
+    "tool": "check_drug_interactions",
+    "input": {"rxcuis": ["11289", "1191"]},
+    "expected": {"has_high_severity": true},
+    "tags": ["interactions", "integration"]
+  },
+  {
+    "id": "interaction_003",
+    "description": "No known interaction between metformin and lisinopril",
+    "tool": "check_drug_interactions",
+    "input": {"rxcuis": ["6809", "29046"]},
+    "expected": {"has_high_severity": false},
+    "tags": ["interactions", "integration"]
+  },
+  {
+    "id": "interaction_004",
+    "description": "Single RxCUI list returns error",
+    "tool": "check_drug_interactions",
+    "input": {"rxcuis": ["6809"]},
+    "expected": {"error_contains": "at least 2"},
+    "tags": ["error"]
+  },
+  {
+    "id": "interaction_005",
+    "description": "Non-numeric RxCUI returns error",
+    "tool": "check_drug_interactions",
+    "input": {"rxcuis": ["warfarin", "1191"]},
+    "expected": {"error_contains": "invalid rxcui"},
+    "tags": ["error"]
+  },
+  {
+    "id": "dose_001",
+    "description": "Ibuprofen 400 mg bid is within_range",
+    "tool": "check_dose",
+    "input": {"drug": "ibuprofen", "dose_mg": 400, "frequency": "bid"},
+    "expected": {"assessment": "within_range", "found_in_table": true},
+    "tags": ["smoke", "dose"]
+  },
+  {
+    "id": "dose_002",
+    "description": "Ibuprofen 1200 mg single dose exceeds_single_dose",
+    "tool": "check_dose",
+    "input": {"drug": "ibuprofen", "dose_mg": 1200},
+    "expected": {"assessment": "exceeds_single_dose", "found_in_table": true},
+    "tags": ["dose"]
+  },
+  {
+    "id": "dose_003",
+    "description": "Ibuprofen 600 mg q4h exceeds_daily_dose",
+    "tool": "check_dose",
+    "input": {"drug": "ibuprofen", "dose_mg": 600, "frequency": "q4h"},
+    "expected": {"assessment": "exceeds_daily_dose", "found_in_table": true},
+    "tags": ["dose"]
+  },
+  {
+    "id": "dose_004",
+    "description": "Acetaminophen 50 mg is below_typical",
+    "tool": "check_dose",
+    "input": {"drug": "acetaminophen", "dose_mg": 50},
+    "expected": {"assessment": "below_typical", "found_in_table": true},
+    "tags": ["dose"]
+  },
+  {
+    "id": "dose_005",
+    "description": "Brand alias tylenol resolves to acetaminophen",
+    "tool": "check_dose",
+    "input": {"drug": "tylenol", "dose_mg": 500},
+    "expected": {"canonical_name": "acetaminophen", "found_in_table": true},
+    "tags": ["dose", "alias"]
+  },
+  {
+    "id": "dose_006",
+    "description": "Unknown drug returns unknown_drug assessment",
+    "tool": "check_dose",
+    "input": {"drug": "imaginarydrug", "dose_mg": 100},
+    "expected": {"assessment": "unknown_drug", "found_in_table": false},
+    "tags": ["dose", "not_found"]
+  },
+  {
+    "id": "dose_007",
+    "description": "Zero dose_mg returns error",
+    "tool": "check_dose",
+    "input": {"drug": "ibuprofen", "dose_mg": 0},
+    "expected": {"error_contains": "must be positive"},
+    "tags": ["error"]
+  },
+  {
+    "id": "dose_008",
+    "description": "Advil alias resolves to ibuprofen",
+    "tool": "check_dose",
+    "input": {"drug": "advil", "dose_mg": 400},
+    "expected": {"canonical_name": "ibuprofen", "found_in_table": true},
+    "tags": ["dose", "alias"]
+  },
+  {
+    "id": "allergy_001",
+    "description": "Ibuprofen with nsaid class allergy has_conflicts=true (class_membership)",
+    "tool": "check_allergy_conflicts",
+    "input": {"drug": "ibuprofen", "allergies": ["nsaid"]},
+    "expected": {"has_conflicts": true},
+    "tags": ["smoke", "allergy"]
+  },
+  {
+    "id": "allergy_002",
+    "description": "Naproxen with ibuprofen allergy: cross_reactivity conflict",
+    "tool": "check_allergy_conflicts",
+    "input": {"drug": "naproxen", "allergies": ["ibuprofen"]},
+    "expected": {"has_conflicts": true},
+    "tags": ["allergy"]
+  },
+  {
+    "id": "allergy_003",
+    "description": "Ibuprofen with direct drug allergy: direct_match",
+    "tool": "check_allergy_conflicts",
+    "input": {"drug": "ibuprofen", "allergies": ["ibuprofen"]},
+    "expected": {"has_conflicts": true},
+    "tags": ["allergy"]
+  },
+  {
+    "id": "allergy_004",
+    "description": "Metformin with penicillin allergy: no conflict",
+    "tool": "check_allergy_conflicts",
+    "input": {"drug": "metformin", "allergies": ["penicillin"]},
+    "expected": {"has_conflicts": false},
+    "tags": ["smoke", "allergy"]
+  },
+  {
+    "id": "allergy_005",
+    "description": "Empty allergy list: no conflict",
+    "tool": "check_allergy_conflicts",
+    "input": {"drug": "ibuprofen", "allergies": []},
+    "expected": {"has_conflicts": false},
+    "tags": ["allergy"]
+  },
+  {
+    "id": "allergy_006",
+    "description": "Injection chars in drug name returns error",
+    "tool": "check_allergy_conflicts",
+    "input": {"drug": "; drop table drugs --", "allergies": ["penicillin"]},
+    "expected": {"error_contains": "invalid drug name"},
+    "tags": ["error", "security"]
+  }
+]

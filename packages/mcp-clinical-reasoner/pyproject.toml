@@ -1,6 +1,6 @@
 [project]
 name = "mcp-clinical-reasoner"
-version = "0.1.0"
+version = "1.0.0"
 description = "Rule-based drug interactions, dose check, and allergy MCP server (RxNav backend)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -8,7 +8,7 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "fhir-mcp-suite contributors" }]
 keywords = ["mcp", "clinical", "drug-interactions", "rxnav", "allergy", "healthcare"]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.12",
@@ -30,6 +30,8 @@ mcp-clinical-reasoner = "mcp_clinical_reasoner.server:main"
 Homepage = "https://github.com/pcmedsinge/fhir-mcp-suite"
 Repository = "https://github.com/pcmedsinge/fhir-mcp-suite"
 "Bug Tracker" = "https://github.com/pcmedsinge/fhir-mcp-suite/issues"
+Changelog = "https://github.com/pcmedsinge/fhir-mcp-suite/blob/main/packages/mcp-clinical-reasoner/CHANGELOG.md"
+Documentation = "https://github.com/pcmedsinge/fhir-mcp-suite/tree/main/packages/mcp-clinical-reasoner#readme"
 
 [build-system]
 requires = ["hatchling"]

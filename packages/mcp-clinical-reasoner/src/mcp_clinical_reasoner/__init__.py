@@ -1,6 +1,6 @@
-"""mcp-clinical-reasoner — Drug interactions, dose check, allergy MCP server.
+"""mcp-clinical-reasoner — rule-based drug interactions, dose check, allergy check."""
 
-Status: coming Phase 3.4 (weeks 6-7).
-"""
+from mcp_clinical_reasoner.server import main
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
+

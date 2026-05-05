@@ -807,7 +807,7 @@ cli = [
 
 [[package]]
 name = "mcp-clinical-reasoner"
-version = "0.1.0"
+version = "1.0.0"
 source = { editable = "packages/mcp-clinical-reasoner" }
 dependencies = [
     { name = "fhir-mcp-shared" },
