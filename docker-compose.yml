@@ -1,0 +1,94 @@
+services:
+  # ── HAPI FHIR validator sidecar ─────────────────────────────────────────
+  hapi-validator:
+    image: markiantorno/validator-wrapper:latest
+    container_name: fhir-validator
+    ports:
+      - "8082:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s   # validator takes time to download IG packages on first boot
+
+  # ── HAPI FHIR R4 server (dev/test target) ────────────────────────────────
+  hapi-fhir:
+    image: hapiproject/hapi:latest
+    container_name: hapi-fhir
+    ports:
+      - "8081:8080"
+    environment:
+      hapi.fhir.fhir_version: R4
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/fhir/metadata"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Postgres + pgvector (eval dashboard, future use) ─────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: fhir-mcp-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fhirmcp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fhirmcp}
+      POSTGRES_DB: ${POSTGRES_DB:-fhirmcp}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fhirmcp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── mcp-fhir (SSE transport for local dev/demo) ──────────────────────────
+  mcp-fhir:
+    build:
+      context: .
+      dockerfile: packages/mcp-fhir/Dockerfile
+    container_name: mcp-fhir
+    ports:
+      - "8000:8000"
+    environment:
+      MCP_TRANSPORT: sse
+      MCP_PORT: "8000"
+      FHIR_BASE_URL: http://hapi-fhir:8080/fhir
+      HAPI_VALIDATOR_URL: http://hapi-validator:8080
+      LOG_FORMAT: json
+      LOG_LEVEL: INFO
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-https://cloud.langfuse.com}
+    depends_on:
+      hapi-fhir:
+        condition: service_healthy
+      hapi-validator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/sse"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── mcp-terminology stub (Phase 3.3) ─────────────────────────────────────
+  mcp-terminology:
+    build:
+      context: .
+      dockerfile: packages/mcp-terminology/Dockerfile
+    container_name: mcp-terminology
+    profiles: ["phase33"]   # opt-in; not started by default
+
+  # ── mcp-clinical-reasoner stub (Phase 3.4) ───────────────────────────────
+  mcp-clinical-reasoner:
+    build:
+      context: .
+      dockerfile: packages/mcp-clinical-reasoner/Dockerfile
+    container_name: mcp-clinical-reasoner
+    profiles: ["phase34"]   # opt-in; not started by default
+
+volumes:
+  postgres_data:

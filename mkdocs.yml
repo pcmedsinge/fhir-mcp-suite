@@ -1,0 +1,63 @@
+site_name: fhir-mcp-suite
+site_description: "FHIR R4 MCP server suite: fhir-read/search + HAPI profile validation + terminology + clinical reasoning"
+site_url: https://pcmedsinge.github.io/fhir-mcp-suite/
+repo_url: https://github.com/pcmedsinge/fhir-mcp-suite
+repo_name: pcmedsinge/fhir-mcp-suite
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - search.suggest
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+
+nav:
+  - Home: index.md
+  - mcp-fhir:
+      - Overview: mcp-fhir/overview.md
+      - Installation: mcp-fhir/installation.md
+      - Tools: mcp-fhir/tools.md
+      - Profile validation: mcp-fhir/profile-validation.md
+      - Configuration: mcp-fhir/configuration.md
+  - mcp-terminology:
+      - Overview: mcp-terminology/overview.md
+  - mcp-clinical-reasoner:
+      - Overview: mcp-clinical-reasoner/overview.md
+  - Development:
+      - Contributing: dev/contributing.md
+      - Architecture: dev/architecture.md
+      - Eval harness: dev/eval.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true

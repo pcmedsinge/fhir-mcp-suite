@@ -1,0 +1,162 @@
+"""HAPI FHIR validator sidecar client.
+
+Wraps the markiantorno/validator-wrapper REST API.  Sends a resource JSON
+to ``POST /validate`` and returns a normalised :class:`ValidationReport`.
+
+If the validator is unreachable (e.g. sidecar not running) the method
+returns a report with a single FATAL issue rather than raising — the MCP
+tool surfaces this as a structured error to the client.
+
+Ported and adapted from P1 (fhir-mapping-agent/tools/validator.py).
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+import httpx
+import structlog
+
+from fhir_mcp_shared.models.validation import (
+    ValidationIssue,
+    ValidationReport,
+    ValidationSeverity,
+)
+
+from mcp_fhir.settings import settings
+
+log = structlog.get_logger(__name__)
+
+_SEVERITY_MAP: dict[str, ValidationSeverity] = {
+    "fatal": ValidationSeverity.FATAL,
+    "error": ValidationSeverity.ERROR,
+    "warning": ValidationSeverity.WARNING,
+    "information": ValidationSeverity.INFORMATION,
+    "informational": ValidationSeverity.INFORMATION,
+}
+
+
+def _build_request(resource: dict[str, Any], profile: str, fhir_version: str) -> dict[str, Any]:
+    return {
+        "cliContext": {
+            "sv": fhir_version,
+            "profiles": [profile] if profile else [],
+            "locale": "en",
+        },
+        "filesToValidate": [
+            {
+                "fileName": "resource.json",
+                "fileContent": json.dumps(resource),
+                "fileType": "json",
+            }
+        ],
+    }
+
+
+def _location_of(issue: dict[str, Any]) -> str | None:
+    for key in ("expression", "location"):
+        loc = issue.get(key)
+        if isinstance(loc, list) and loc:
+            return str(loc[0])
+    return None
+
+
+def _parse_outcome(outcome: dict[str, Any], profile: str, resource_type: str) -> ValidationReport:
+    issues: list[ValidationIssue] = []
+    for raw in outcome.get("issue", []) or []:
+        sev_str = (raw.get("severity") or "information").lower()
+        sev = _SEVERITY_MAP.get(sev_str, ValidationSeverity.INFORMATION)
+        message = (
+            (raw.get("details") or {}).get("text")
+            or raw.get("diagnostics")
+            or raw.get("code")
+            or "(no message)"
+        )
+        issues.append(
+            ValidationIssue(
+                severity=sev,
+                code=raw.get("code") or "unknown",
+                location=_location_of(raw),
+                message=str(message),
+            )
+        )
+    is_conformant = not any(
+        i.severity in (ValidationSeverity.ERROR, ValidationSeverity.FATAL) for i in issues
+    )
+    return ValidationReport(
+        profile=profile, resource_type=resource_type, is_conformant=is_conformant, issues=issues
+    )
+
+
+async def validate_resource(
+    resource: dict[str, Any],
+    profile: str = "",
+    fhir_version: str = "4.0.1",
+) -> ValidationReport:
+    """Validate *resource* against *profile* using the HAPI validator sidecar.
+
+    Args:
+        resource:     A FHIR resource as a plain dict.
+        profile:      Profile URL to validate against, e.g.
+                      ``http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient``.
+                      Empty string means base-spec validation only.
+        fhir_version: FHIR version string for the HAPI CLI context.
+
+    Returns:
+        :class:`ValidationReport` with ``is_conformant`` and any issues.
+    """
+    resource_type = resource.get("resourceType", "Unknown")
+    body = _build_request(resource, profile, fhir_version)
+    url = f"{settings.hapi_validator_url.rstrip('/')}/validate"
+
+    try:
+        async with httpx.AsyncClient(timeout=settings.hapi_validator_timeout_s) as client:
+            response = await client.post(url, json=body)
+            response.raise_for_status()
+            data = response.json()
+    except httpx.ConnectError as exc:
+        log.warning("hapi_validator_unreachable", url=url, error=str(exc))
+        return ValidationReport(
+            profile=profile,
+            resource_type=resource_type,
+            is_conformant=False,
+            issues=[
+                ValidationIssue(
+                    severity=ValidationSeverity.FATAL,
+                    code="connection-error",
+                    message=f"HAPI validator unreachable at {url}: {exc}",
+                )
+            ],
+        )
+    except httpx.HTTPStatusError as exc:
+        log.warning("hapi_validator_http_error", status=exc.response.status_code)
+        return ValidationReport(
+            profile=profile,
+            resource_type=resource_type,
+            is_conformant=False,
+            issues=[
+                ValidationIssue(
+                    severity=ValidationSeverity.FATAL,
+                    code="http-error",
+                    message=f"Validator returned HTTP {exc.response.status_code}",
+                )
+            ],
+        )
+
+    # The wrapper returns either a single OperationOutcome or a list.
+    outcomes = data if isinstance(data, list) else [data]
+    all_issues: list[ValidationIssue] = []
+    for outcome in outcomes:
+        report = _parse_outcome(outcome, profile, resource_type)
+        all_issues.extend(report.issues)
+
+    is_conformant = not any(
+        i.severity in (ValidationSeverity.ERROR, ValidationSeverity.FATAL) for i in all_issues
+    )
+    return ValidationReport(
+        profile=profile,
+        resource_type=resource_type,
+        is_conformant=is_conformant,
+        issues=all_issues,
+    )
