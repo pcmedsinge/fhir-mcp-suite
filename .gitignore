@@ -12,7 +12,7 @@ build/
 # uv
 .venv/
 .uv/
-uv.lock
+# uv.lock is intentionally committed — pins all transitive deps for CI reproducibility
 
 # Environments
 .env
