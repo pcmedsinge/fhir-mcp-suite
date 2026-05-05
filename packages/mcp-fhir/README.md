@@ -176,6 +176,56 @@ SMART_TOKEN_URL=https://authorization.cerner.com/tenants/your-tenant-id/protocol
 }
 ```
 
+### Programmatic client (LangGraph / any Python agent)
+
+Use `StdioServerParameters` to point any Python MCP client at a FHIR server.
+The same pattern works in LangGraph tool nodes, LangChain agents, or plain `asyncio` scripts.
+
+```python
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+import asyncio, os
+
+server = StdioServerParameters(
+    command="uv",
+    args=["run", "--package", "mcp-fhir", "mcp-fhir"],
+    env={
+        **os.environ,
+        # ── Public HAPI (no auth) ──────────────────────────────────
+        "FHIR_BASE_URL": "https://hapi.fhir.org/baseR4",
+        "SMART_ENABLED": "false",
+
+        # ── Epic sandbox (uncomment + fill in) ────────────────────
+        # "FHIR_BASE_URL":       "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+        # "SMART_ENABLED":       "true",
+        # "SMART_CLIENT_ID":     os.environ["EPIC_CLIENT_ID"],
+        # "SMART_CLIENT_SECRET": os.environ["EPIC_CLIENT_SECRET"],
+
+        # ── Cerner sandbox (uncomment + fill in) ──────────────────
+        # "FHIR_BASE_URL":       "https://fhir-myrecord.cerner.com/r4/<tenant-id>",
+        # "SMART_ENABLED":       "true",
+        # "SMART_CLIENT_ID":     os.environ["CERNER_CLIENT_ID"],
+        # "SMART_CLIENT_SECRET": os.environ["CERNER_CLIENT_SECRET"],
+        # "SMART_TOKEN_URL":     "https://authorization.cerner.com/tenants/<tenant-id>/...",
+    },
+)
+
+async def main():
+    async with stdio_client(server) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool(
+                "fhir_search",
+                arguments={"resource_type": "Patient", "params": {"_count": "3"}},
+            )
+            print(result.content[0].text)
+
+asyncio.run(main())
+```
+
+See [`demo/fhir_server_configs.py`](../../demo/fhir_server_configs.py) for ready-to-run
+configs for all supported servers (public HAPI, SMART Health IT, Epic, Cerner, local Docker).
+
 ### Running SMART integration tests
 
 ```bash
