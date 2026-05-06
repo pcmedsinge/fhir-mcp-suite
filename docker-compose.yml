@@ -5,6 +5,12 @@ services:
     container_name: fhir-validator
     ports:
       - "8082:3500"       # Ktor server inside the image runs on 3500 (not 8080)
+    environment:
+      JAVA_OPTS: "-Xms512m -Xmx4g"   # cap heap at 4 GB to avoid OOM-kill on host
+    mem_limit: 5g
+    memswap_limit: 5g
+    volumes:
+      - fhir_package_cache:/home/ktor/.fhir/packages   # persist IG cache across restarts
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3500/ > /dev/null 2>&1 || exit 1"]
       interval: 30s
@@ -92,3 +98,4 @@ services:
 
 volumes:
   postgres_data:
+  fhir_package_cache:
