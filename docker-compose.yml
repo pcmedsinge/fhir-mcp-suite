@@ -4,13 +4,13 @@ services:
     image: markiantorno/validator-wrapper:latest
     container_name: fhir-validator
     ports:
-      - "8082:8080"
+      - "8082:3500"       # Ktor server inside the image runs on 3500 (not 8080)
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3500/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s   # validator takes time to download IG packages on first boot
+      start_period: 90s   # validator downloads IG packages on first boot (~60-90s)
 
   # ── HAPI FHIR R4 server (dev/test target) ────────────────────────────────
   hapi-fhir:
@@ -57,7 +57,7 @@ services:
       MCP_TRANSPORT: sse
       MCP_PORT: "8000"
       FHIR_BASE_URL: http://hapi-fhir:8080/fhir
-      HAPI_VALIDATOR_URL: http://hapi-validator:8080
+      HAPI_VALIDATOR_URL: http://hapi-validator:3500
       LOG_FORMAT: json
       LOG_LEVEL: INFO
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}

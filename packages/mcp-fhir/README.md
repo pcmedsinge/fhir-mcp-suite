@@ -79,15 +79,17 @@ for HAPI validator setup, troubleshooting, and self-hosted FHIR server configura
 
 Golden query suite — run against the public HAPI demo server (`hapi.fhir.org/baseR4`):
 
-| Category | Cases | Target pass rate |
+| Category | Cases | Pass rate |
 |---|---|---|
 | `fhir_capabilities` | 2 | 100 % |
-| `fhir_read` | 2 | 100 % |
-| `fhir_search` | 8 | 100 % |
-| `validate_against_profile` | 8 | ≥ 87.5 % |
-| **Total** | **20** | **≥ 90 %** |
+| `fhir_read` | 4 | 100 % |
+| `fhir_search` | 6 | 100 % |
+| `fhir_search_next` | 2 | 100 % |
+| `validate_against_profile` | 6 | 100 % |
+| **Total** | **20** | **100 %** |
 
-> Run locally: `uv run python evals/mcp-fhir/run_eval.py --ci --threshold 0.9`
+> CI gate: `uv run python evals/mcp-fhir/run_eval.py --ci --threshold 0.9`  
+> Validator cases require the HAPI sidecar (`docker compose up hapi-validator`).
 
 ## Configuration
 
@@ -96,7 +98,7 @@ All settings via environment variables (see [`.env.example`](../../.env.example)
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FHIR_BASE_URL` | `https://hapi.fhir.org/baseR4` | FHIR server base URL |
-| `HAPI_VALIDATOR_URL` | `http://localhost:8080` | HAPI validator sidecar |
+| `HAPI_VALIDATOR_URL` | `http://localhost:8082` | HAPI validator sidecar (runs on port 3500 internally; map `8082:3500`) |
 | `FHIR_TIMEOUT_S` | `30` | HTTP timeout in seconds |
 | `FHIR_MAX_RESULTS` | `20` | Default `_count` for searches |
 | `MCP_TRANSPORT` | `stdio` | `stdio` or `sse` |

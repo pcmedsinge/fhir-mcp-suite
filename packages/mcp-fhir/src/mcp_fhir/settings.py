@@ -26,10 +26,10 @@ class Settings(BaseSettings):
 
     # HAPI validator sidecar
     hapi_validator_url: str = Field(
-        default="http://localhost:8080",
+        default="http://localhost:8082",
         description="Base URL of the markiantorno/validator-wrapper sidecar.",
     )
-    hapi_validator_timeout_s: float = Field(default=60.0)
+    hapi_validator_timeout_s: float = Field(default=300.0)
 
     # MCP transport
     mcp_transport: str = Field(

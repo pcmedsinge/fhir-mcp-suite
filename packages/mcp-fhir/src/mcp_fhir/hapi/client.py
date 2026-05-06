@@ -36,14 +36,33 @@ _SEVERITY_MAP: dict[str, ValidationSeverity] = {
     "informational": ValidationSeverity.INFORMATION,
 }
 
+# Profile URL prefix → IG package name required to resolve the profile
+_PROFILE_IG_MAP: dict[str, str] = {
+    "http://hl7.org/fhir/us/core/": "hl7.fhir.us.core",
+    "http://hl7.org/fhir/uv/ips/": "hl7.fhir.uv.ips",
+    "http://hl7.org/fhir/uv/sdc/": "hl7.fhir.uv.sdc",
+}
+
+
+def _igs_for_profile(profile: str) -> list[str]:
+    """Return the IG package(s) needed to resolve *profile*."""
+    for prefix, ig in _PROFILE_IG_MAP.items():
+        if profile.startswith(prefix):
+            return [ig]
+    return []
+
 
 def _build_request(resource: dict[str, Any], profile: str, fhir_version: str) -> dict[str, Any]:
+    igs = _igs_for_profile(profile) if profile else []
+    ctx: dict[str, Any] = {
+        "sv": fhir_version,
+        "profiles": [profile] if profile else [],
+        "locale": "en",
+    }
+    if igs:
+        ctx["igs"] = igs
     return {
-        "cliContext": {
-            "sv": fhir_version,
-            "profiles": [profile] if profile else [],
-            "locale": "en",
-        },
+        "cliContext": ctx,
         "filesToValidate": [
             {
                 "fileName": "resource.json",
@@ -115,7 +134,8 @@ async def validate_resource(
             response = await client.post(url, json=body)
             response.raise_for_status()
             data = response.json()
-    except httpx.ConnectError as exc:
+    except (httpx.ConnectError, httpx.ReadTimeout, httpx.TimeoutException) as exc:
+        err_type = "timeout" if isinstance(exc, (httpx.ReadTimeout, httpx.TimeoutException)) else "connection-error"
         log.warning("hapi_validator_unreachable", url=url, error=str(exc))
         return ValidationReport(
             profile=profile,
@@ -124,7 +144,7 @@ async def validate_resource(
             issues=[
                 ValidationIssue(
                     severity=ValidationSeverity.FATAL,
-                    code="connection-error",
+                    code=err_type,
                     message=f"HAPI validator unreachable at {url}: {exc}",
                 )
             ],
