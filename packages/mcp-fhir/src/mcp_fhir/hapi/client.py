@@ -36,11 +36,11 @@ _SEVERITY_MAP: dict[str, ValidationSeverity] = {
     "informational": ValidationSeverity.INFORMATION,
 }
 
-# Profile URL prefix → IG package name required to resolve the profile
+# Profile URL prefix → pinned IG package (matches what validator-wrapper pre-caches)
 _PROFILE_IG_MAP: dict[str, str] = {
-    "http://hl7.org/fhir/us/core/": "hl7.fhir.us.core",
-    "http://hl7.org/fhir/uv/ips/": "hl7.fhir.uv.ips",
-    "http://hl7.org/fhir/uv/sdc/": "hl7.fhir.uv.sdc",
+    "http://hl7.org/fhir/us/core/": "hl7.fhir.us.core#8.0.0",
+    "http://hl7.org/fhir/uv/ips/": "hl7.fhir.uv.ips#2.0.0",
+    "http://hl7.org/fhir/uv/sdc/": "hl7.fhir.uv.sdc#3.0.0",
 }
 
 
@@ -83,11 +83,12 @@ def _location_of(issue: dict[str, Any]) -> str | None:
 
 def _parse_outcome(outcome: dict[str, Any], profile: str, resource_type: str) -> ValidationReport:
     issues: list[ValidationIssue] = []
-    for raw in outcome.get("issue", []) or []:
-        sev_str = (raw.get("severity") or "information").lower()
+    for raw in outcome.get("issues", []) or []:
+        sev_str = (raw.get("level") or raw.get("severity") or "information").lower()
         sev = _SEVERITY_MAP.get(sev_str, ValidationSeverity.INFORMATION)
         message = (
-            (raw.get("details") or {}).get("text")
+            raw.get("message")
+            or (raw.get("details") or {}).get("text")
             or raw.get("diagnostics")
             or raw.get("code")
             or "(no message)"
@@ -164,8 +165,14 @@ async def validate_resource(
             ],
         )
 
-    # The wrapper returns either a single OperationOutcome or a list.
-    outcomes = data if isinstance(data, list) else [data]
+    # The validator-wrapper envelope: {"outcomes": [...], "sessionId": ..., "validationTimes": ...}
+    # Fall back to treating data as a bare list/dict for compatibility.
+    if isinstance(data, dict) and "outcomes" in data:
+        outcomes = data["outcomes"]
+    elif isinstance(data, list):
+        outcomes = data
+    else:
+        outcomes = [data]
     all_issues: list[ValidationIssue] = []
     for outcome in outcomes:
         report = _parse_outcome(outcome, profile, resource_type)
