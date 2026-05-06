@@ -117,8 +117,7 @@ def _build_server() -> Server:
                     "type": "object",
                     "properties": {
                         "resource": {
-                            "type": "object",
-                            "description": "A FHIR resource as a JSON object.",
+                            "description": "A FHIR resource as a JSON object (or a JSON string that will be parsed).",
                         },
                         "profile": {
                             "type": "string",
@@ -186,8 +185,12 @@ def _build_server() -> Server:
                         params=arguments.get("params"),
                     )
                 elif name == "validate_against_profile":
+                    _res = arguments["resource"]
+                    if isinstance(_res, str):
+                        import json as _json
+                        _res = _json.loads(_res)
                     result = await validate_against_profile(
-                        resource=arguments["resource"],
+                        resource=_res,
                         profile=arguments.get("profile", ""),
                         fhir_version=arguments.get("fhir_version", "4.0.1"),
                     )
