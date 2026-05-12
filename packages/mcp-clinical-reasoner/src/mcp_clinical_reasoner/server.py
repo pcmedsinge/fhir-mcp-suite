@@ -2,7 +2,7 @@
 
 Four MCP tools:
   - lookup_drug              — resolve drug name/RxCUI → structured info (RxNav)
-  - check_drug_interactions  — detect DDIs for a set of RxNorm CUIs (RxNav)
+  - check_drug_interactions  — detect DDIs for a set of drug names (OpenFDA)
   - check_dose               — rule-based single/daily dose range check
   - check_allergy_conflicts  — rule-based cross-reactivity check
 
@@ -67,23 +67,22 @@ def _build_server() -> Server:
             Tool(
                 name="check_drug_interactions",
                 description=(
-                    "Check for drug-drug interactions (DDIs) among 2–10 RxNorm CUIs. "
-                    "Uses the NLM RxNav interaction API (DrugBank, ONCHigh sources). "
-                    "Returns interactions sorted by severity (high → moderate → low). "
-                    "Use lookup_drug first to obtain RxCUIs from drug names."
+                    "Check for drug-drug interactions (DDIs) among 2–10 drugs by name. "
+                    "Uses the FDA drug label database (api.fda.gov) — interaction text "
+                    "from official FDA-approved labeling. No API key required."
                 ),
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "rxcuis": {
+                        "drug_names": {
                             "type": "array",
                             "items": {"type": "string"},
                             "minItems": 2,
                             "maxItems": 10,
-                            "description": "List of 2–10 RxNorm CUI strings (e.g. ['6809', '29046']).",
+                            "description": "List of 2–10 drug names (e.g. ['ibuprofen', 'lisinopril', 'metformin']).",
                         },
                     },
-                    "required": ["rxcuis"],
+                    "required": ["drug_names"],
                 },
             ),
             Tool(
@@ -163,7 +162,7 @@ def _build_server() -> Server:
                 if name == "lookup_drug":
                     result = await lookup_drug(name_or_rxcui=arguments["name_or_rxcui"])
                 elif name == "check_drug_interactions":
-                    result = await check_drug_interactions(rxcuis=arguments["rxcuis"])
+                    result = await check_drug_interactions(drug_names=arguments["drug_names"])
                 elif name == "check_dose":
                     result = await check_dose(
                         drug=arguments["drug"],
@@ -198,6 +197,7 @@ def _build_server() -> Server:
 
 
 async def _run_stdio(server: Server) -> None:
+    from mcp.server.lowlevel.server import NotificationOptions
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
@@ -206,7 +206,7 @@ async def _run_stdio(server: Server) -> None:
                 server_name="mcp-clinical-reasoner",
                 server_version="1.0.0",
                 capabilities=server.get_capabilities(
-                    notification_options=None,  # type: ignore[arg-type]
+                    notification_options=NotificationOptions(),
                     experimental_capabilities={},
                 ),
             ),

@@ -1,92 +1,157 @@
-"""check_drug_interactions — detect DDIs via NLM RxNav interaction API."""
+"""check_drug_interactions — detect DDIs via FDA drug label API (OpenFDA).
+
+NLM RxNav's /interaction endpoint was removed in May 2026 (API v3.1.353).
+This implementation uses the FDA drug label database (api.fda.gov), which
+contains structured drug interaction sections from FDA-approved labeling.
+No API key required. Rate limit: 240 requests/minute.
+"""
 
 from __future__ import annotations
+
+import re
 
 import httpx
 import structlog
 
-from mcp_clinical_reasoner.settings import settings
-from mcp_clinical_reasoner.validation import validate_rxcuis_list
-
 log = structlog.get_logger(__name__)
 
-_SEVERITY_RANK = {"high": 0, "moderate": 1, "low": 2, "unknown": 3}
+_OPENFDA_BASE = "https://api.fda.gov/drug/label.json"
+
+# Map specific drug names to pharmacological class terms that appear in FDA labels.
+# FDA labeling often uses class names ("ACE-inhibitors", "NSAIDs") rather than
+# individual drug names, so we check both the drug name and its class aliases.
+_CLASS_ALIASES: dict[str, list[str]] = {
+    # ACE inhibitors
+    "lisinopril":   ["lisinopril", "ACE", "ACE-inhibitor", "ACE inhibitor", "angiotensin-converting enzyme"],
+    "enalapril":    ["enalapril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
+    "ramipril":     ["ramipril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
+    "captopril":    ["captopril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
+    # NSAIDs
+    "ibuprofen":    ["ibuprofen", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory", "nonsteroidal"],
+    "naproxen":     ["naproxen", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory"],
+    "celecoxib":    ["celecoxib", "NSAID", "NSAIDs", "COX-2"],
+    "diclofenac":   ["diclofenac", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory"],
+    "indomethacin": ["indomethacin", "NSAID", "NSAIDs"],
+    # Anticoagulants / antiplatelets
+    "warfarin":     ["warfarin", "coumarin", "anticoagulant"],
+    "aspirin":      ["aspirin", "salicylate", "antiplatelet"],
+    "clopidogrel":  ["clopidogrel", "antiplatelet"],
+    # Statins
+    "atorvastatin": ["atorvastatin", "statin", "HMG-CoA"],
+    "simvastatin":  ["simvastatin", "statin", "HMG-CoA"],
+    # Biguanides
+    "metformin":    ["metformin", "biguanide"],
+    # ARBs
+    "losartan":     ["losartan", "ARB", "angiotensin II", "angiotensin receptor"],
+    "valsartan":    ["valsartan", "ARB", "angiotensin II", "angiotensin receptor"],
+    # SSRIs
+    "fluoxetine":   ["fluoxetine", "SSRI", "serotonin reuptake"],
+    "sertraline":   ["sertraline", "SSRI", "serotonin reuptake"],
+    # Opioids
+    "morphine":     ["morphine", "opioid"],
+    "oxycodone":    ["oxycodone", "opioid"],
+}
 
 
-async def check_drug_interactions(rxcuis: list[str]) -> dict:
-    """Check drug-drug interactions for a set of RxNorm CUIs.
+def _aliases(drug_name: str) -> list[str]:
+    """Return search terms for a drug (name + pharmacological class aliases)."""
+    canonical = drug_name.strip().lower()
+    for key, terms in _CLASS_ALIASES.items():
+        if key == canonical:
+            return terms
+    return [drug_name]
 
-    Uses the NLM RxNav interaction API
-    (https://rxnav.nlm.nih.gov/InteractionAPIs.html).
+
+async def check_drug_interactions(drug_names: list[str]) -> dict:
+    """Check for drug-drug interactions using FDA drug label data.
+
+    Fetches each drug's FDA label and searches the drug_interactions section
+    for mentions of the other drugs (by name or pharmacological class).
 
     Args:
-        rxcuis: List of 2–10 RxNorm CUI strings (e.g. ["6809", "29046"]).
+        drug_names: List of 2–10 drug names (e.g. ["ibuprofen", "lisinopril"]).
 
     Returns:
-        dict with keys: rxcuis, drugs, interaction_count, interactions,
-        has_high_severity, has_moderate_severity, sources, disclaimer.
+        dict with keys: drugs, interaction_count, interactions, has_interactions,
+        source, disclaimer.
     """
-    validated = validate_rxcuis_list(rxcuis)
+    if len(drug_names) < 2:
+        raise ValueError("At least 2 drug names required.")
+    if len(drug_names) > 10:
+        raise ValueError("Maximum 10 drug names allowed.")
 
-    url = f"{settings.rxnav_base_url}/interaction/list.json"
-    params = {"rxcuis": " ".join(validated)}
+    interactions: list[dict] = []
+    seen_pairs: set[tuple[str, str]] = set()
 
-    async with httpx.AsyncClient(timeout=settings.rxnav_timeout_s) as client:
-        r = await client.get(url, params=params)
-        r.raise_for_status()
-
-    data = r.json()
-    interactions, sources = _parse_interactions(data)
-
-    has_high = any(i["severity"].lower() == "high" for i in interactions)
-    has_moderate = any(i["severity"].lower() == "moderate" for i in interactions)
-
-    # Sort by severity (high first)
-    interactions.sort(key=lambda x: _SEVERITY_RANK.get(x["severity"].lower(), 3))
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for primary_drug in drug_names:
+            label_text, brand = await _fetch_interaction_text(client, primary_drug)
+            if label_text is None:
+                continue
+            for other_drug in drug_names:
+                if other_drug == primary_drug:
+                    continue
+                pair_key = tuple(sorted([primary_drug.lower(), other_drug.lower()]))
+                if pair_key in seen_pairs:
+                    continue
+                excerpt = _find_mention(label_text, other_drug)
+                if excerpt:
+                    seen_pairs.add(pair_key)
+                    interactions.append({
+                        "drug_a": primary_drug,
+                        "drug_b": other_drug,
+                        "brand_name": brand or primary_drug,
+                        "interaction_text": excerpt,
+                        "source_label": "FDA approved labeling",
+                    })
 
     return {
-        "rxcuis": validated,
+        "drugs": drug_names,
         "interaction_count": len(interactions),
         "interactions": interactions,
-        "has_high_severity": has_high,
-        "has_moderate_severity": has_moderate,
-        "sources": sources,
+        "has_interactions": len(interactions) > 0,
+        "source": "FDA drug label database (api.fda.gov/drug/label)",
         "disclaimer": (
-            "Interaction data sourced from NLM RxNav (DrugBank, ONCHigh, etc.). "
+            "Interaction data sourced from FDA-approved drug labeling. "
             "Clinical significance depends on patient context. "
             "Always consult a pharmacist or prescriber."
         ),
     }
 
 
-def _parse_interactions(data: dict) -> tuple[list[dict], list[str]]:
-    """Parse the fullInteractionTypeGroup response from RxNav."""
-    interactions: list[dict] = []
-    sources: list[str] = []
+async def _fetch_interaction_text(
+    client: httpx.AsyncClient, drug_name: str
+) -> tuple[str | None, str | None]:
+    """Fetch a drug's interaction section text from FDA label database."""
+    params = {"search": f"openfda.generic_name:{drug_name}", "limit": 3}
+    try:
+        r = await client.get(_OPENFDA_BASE, params=params)
+        if r.status_code == 404:
+            return None, None
+        r.raise_for_status()
+        data = r.json()
+        for result in data.get("results", []):
+            di_sections = result.get("drug_interactions", [])
+            if di_sections:
+                text = " ".join(di_sections)
+                brand_list = result.get("openfda", {}).get("brand_name", [])
+                brand = brand_list[0] if brand_list else None
+                return text, brand
+        return None, None
+    except httpx.HTTPStatusError as exc:
+        log.warning("openfda_label_fetch_failed", drug=drug_name, status=exc.response.status_code)
+        return None, None
 
-    for group in data.get("fullInteractionTypeGroup") or []:
-        source_name = group.get("sourceName", "Unknown")
-        if source_name not in sources:
-            sources.append(source_name)
 
-        for full_type in group.get("fullInteractionType") or []:
-            # Extract the two drug concepts involved
-            min_concepts = full_type.get("minConcept") or []
-            drug_names = [c.get("name", "") for c in min_concepts]
-            drug_rxcuis = [c.get("rxcui", "") for c in min_concepts]
+def _find_mention(label_text: str, other_drug: str) -> str | None:
+    """Return a relevant excerpt if other_drug (or its class) is mentioned in label_text."""
+    for term in _aliases(other_drug):
+        pattern = re.compile(re.escape(term), re.IGNORECASE)
+        m = pattern.search(label_text)
+        if m:
+            # Return ~300 chars of context around the match
+            start = max(0, m.start() - 80)
+            end = min(len(label_text), m.end() + 300)
+            return label_text[start:end].strip()
+    return None
 
-            for pair in full_type.get("interactionPair") or []:
-                severity = pair.get("severity", "unknown")
-                description = pair.get("description", "")
-
-                interactions.append({
-                    "drug_1": drug_names[0] if len(drug_names) > 0 else "",
-                    "drug_2": drug_names[1] if len(drug_names) > 1 else "",
-                    "rxcui_1": drug_rxcuis[0] if len(drug_rxcuis) > 0 else "",
-                    "rxcui_2": drug_rxcuis[1] if len(drug_rxcuis) > 1 else "",
-                    "severity": severity,
-                    "description": description,
-                    "source": source_name,
-                })
-
-    return interactions, sources
