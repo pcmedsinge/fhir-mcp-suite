@@ -12,8 +12,8 @@
 | Server | Status | Install | What it does |
 |--------|--------|---------|-------------|
 | **mcp-fhir** | ✅ v0.1 | `uvx mcp-fhir` | FHIR R4 read/search + **HAPI profile validation** |
-| mcp-terminology | 🚧 weeks 4-5 | — | Unified LOINC / SNOMED / RxNorm / ICD-10 |
-| mcp-clinical-reasoner | 🚧 weeks 6-7 | — | Drug interactions, dose check, allergy (RxNav) |
+| **mcp-terminology** | ✅ v1.0 | `uvx mcp-terminology` | Unified LOINC / SNOMED / RxNorm / ICD-10 lookup + ValueSet expansion |
+| **mcp-clinical-reasoner** | ✅ v1.0 | `uvx mcp-clinical-reasoner` | Drug interactions (OpenFDA), dose check, allergy conflicts |
 
 ## Why this suite is different
 
@@ -80,8 +80,8 @@ HAPI_VALIDATOR_URL=http://localhost:8082 \
 fhir-mcp-suite/
 ├── packages/
 │   ├── mcp-fhir/              # PyPI: mcp-fhir          ← active
-│   ├── mcp-terminology/       # PyPI: mcp-terminology   ← weeks 4-5
-│   └── mcp-clinical-reasoner/ # PyPI: mcp-clinical-reasoner ← weeks 6-7
+│   ├── mcp-terminology/       # PyPI: mcp-terminology   ✅ v1.0
+│   └── mcp-clinical-reasoner/ # PyPI: mcp-clinical-reasoner ✅ v1.0
 ├── shared/                    # structlog, LangFuse, base Pydantic models, eval harness
 ├── evals/                     # golden query sets per server
 ├── docs/                      # MkDocs Material site
@@ -91,14 +91,13 @@ fhir-mcp-suite/
 └── mkdocs.yml
 ```
 
-## Release cadence
+## Releases
 
-| Release | ETA | LinkedIn angle |
-|---------|-----|----------------|
-| `mcp-fhir` v1.0 | Week 3 | "I added profile validation to FHIR MCP — why it matters for clinical AI safety" |
-| `mcp-terminology` v1.0 | Week 5 | "Comparing 5 FHIR MCP servers — what's missing in 2026" |
-| `mcp-clinical-reasoner` v1.0 | Week 7 | "How to build a HIPAA-aware MCP server with structured logging and eval" |
-| `mcp-fhir` v1.1 | Week 8 | "Adding SMART-on-FHIR to MCP for Epic/Cerner" |
+| Package | Version | Released |
+|---------|---------|----------|
+| `mcp-fhir` | v1.0 | May 2026 |
+| `mcp-terminology` | v1.0 | May 2026 |
+| `mcp-clinical-reasoner` | v1.0 | May 2026 |
 
 ## Contributing
 
