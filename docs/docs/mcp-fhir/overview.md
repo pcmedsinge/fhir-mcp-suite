@@ -1,15 +1,19 @@
 # mcp-fhir — Overview
 
-`mcp-fhir` is an MCP server that exposes FHIR R4 read, search, and
-**HAPI-backed profile validation** as MCP tools.
+`mcp-fhir` is an MCP server that exposes FHIR R4 read, search, pagination,
+server capabilities, and **HAPI-backed profile validation** as MCP tools.
+
+**Status:** ✅ v1.0 — `uvx mcp-fhir`
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `fhir_read` | Read a single FHIR resource by type + ID |
-| `fhir_search` | Search with FHIR query parameters, returns a Bundle |
-| `validate_against_profile` | Validate a resource against US Core / IPS profiles |
+| Tool | Description | Backend |
+|------|-------------|--------|
+| `fhir_capabilities` | Retrieve a summary of the FHIR server's CapabilityStatement (version, resources, operations) | Configured FHIR R4 server |
+| `fhir_read` | Read a single FHIR R4 resource by type and logical ID | Configured FHIR R4 server |
+| `fhir_search` | Search a FHIR R4 resource type with query parameters; returns a Bundle | Configured FHIR R4 server |
+| `fhir_search_next` | Follow a Bundle pagination link returned by `fhir_search` | Configured FHIR R4 server |
+| `validate_against_profile` | Validate a FHIR R4 resource against a StructureDefinition profile (US Core, IPS) | HAPI validator sidecar |
 
 ## Unique value
 
@@ -22,8 +26,16 @@ per-issue details — enabling clinical AI pipelines to enforce data quality.
 
 ```
 Claude / GPT-4o  ──MCP──►  mcp-fhir server
-                               ├── fhir_read/search ──► FHIR R4 server
-                               └── validate ──────────► HAPI validator
-                                                             │
-                                                        LangFuse traces
+                               ├── fhir_capabilities/read/search/next ──► FHIR R4 server
+                               └── validate_against_profile ────────────► HAPI validator sidecar
+                                                                                │
+                                                                           LangFuse traces
 ```
+
+## Configuration
+
+| Env var | Default | Description |
+|---------|---------|-------------|
+| `FHIR_BASE_URL` | `https://hapi.fhir.org/baseR4` | FHIR server to query |
+| `HAPI_VALIDATOR_URL` | `http://localhost:8082` | HAPI validator sidecar |
+| `SMART_ENABLED` | `false` | Enable SMART-on-FHIR auth |

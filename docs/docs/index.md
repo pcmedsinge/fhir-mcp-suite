@@ -2,9 +2,9 @@
 
 Three coherent MCP servers for clinical AI:
 
-- **[mcp-fhir](mcp-fhir/overview.md)** — FHIR R4 read/search + profile validation ✅ available now
-- **[mcp-terminology](mcp-terminology/overview.md)** — Unified LOINC/SNOMED/RxNorm/ICD-10 (coming weeks 4-5)
-- **[mcp-clinical-reasoner](mcp-clinical-reasoner/overview.md)** — Drug interactions + dose check (coming weeks 6-7)
+- **[mcp-fhir](mcp-fhir/overview.md)** — FHIR R4 read/search/pagination + HAPI profile validation ✅ v1.0
+- **[mcp-terminology](mcp-terminology/overview.md)** — Unified LOINC/SNOMED/RxNorm/ICD-10 lookup, search, translate, ValueSet expand ✅ v1.0
+- **[mcp-clinical-reasoner](mcp-clinical-reasoner/overview.md)** — Drug lookup, interactions (OpenFDA), dose check, allergy conflicts ✅ v1.0
 
 ## Why this suite
 
