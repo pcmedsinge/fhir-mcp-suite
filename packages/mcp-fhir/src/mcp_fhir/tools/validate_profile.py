@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import structlog
-
 from fhir_mcp_shared.langfuse import span
 from fhir_mcp_shared.models.validation import ValidationReport
 

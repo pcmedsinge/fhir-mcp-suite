@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -78,7 +78,7 @@ async def discover_token_url(fhir_base_url: str, timeout_s: float = 10.0) -> str
             resp = await client.get(discovery_url, headers={"Accept": "application/json"})
             resp.raise_for_status()
             data: dict[str, Any] = resp.json()
-            token_url = data.get("token_endpoint", "")
+            token_url = str(data.get("token_endpoint", ""))
             if token_url:
                 log.info("smart_discovery_ok", token_endpoint=token_url)
                 return token_url

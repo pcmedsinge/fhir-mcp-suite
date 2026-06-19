@@ -14,8 +14,6 @@ import argparse
 import asyncio
 import json
 import os
-import sys
-import textwrap
 from typing import Any
 
 
@@ -68,7 +66,7 @@ async def demo_search() -> str | None:
             patient_id = res.get("id")
     next_url = bundle.get("_next_url")
     if next_url:
-        print(f"  Pagination   : next page available")
+        print("  Pagination   : next page available")
     return patient_id
 
 
@@ -79,7 +77,7 @@ async def demo_search_next(patient_id: str | None) -> None:
     bundle = await fhir_search("Observation", {"_count": "5", "subject": patient_id or ""})
     next_url = bundle.get("_next_url")
     if next_url:
-        print(f"  Following next link …")
+        print("  Following next link …")
         page2 = await fhir_search_next(next_url)
         print(f"  Page 2 entries: {len(page2.get('entry', []))}")
     else:
@@ -145,7 +143,7 @@ async def main(fhir_url: str) -> None:
     os.environ.setdefault("SMART_ENABLED", "false")
     os.environ.setdefault("LOG_FORMAT", "console")
 
-    print(f"\nfhir-mcp-suite demo")
+    print("\nfhir-mcp-suite demo")
     print(f"FHIR server : {fhir_url}")
     print(f"SMART auth  : {os.environ.get('SMART_ENABLED', 'false')}")
 

@@ -2,17 +2,23 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 import structlog
 
-from mcp_clinical_reasoner.constants import ALLERGEN_CLASSES, DOSE_TABLE, DRUG_ALIASES, DRUG_TO_CLASSES
+from mcp_clinical_reasoner.constants import (
+    DOSE_TABLE,
+    DRUG_ALIASES,
+    DRUG_TO_CLASSES,
+)
 from mcp_clinical_reasoner.settings import settings
 from mcp_clinical_reasoner.validation import is_rxcui, validate_drug_name, validate_rxcui
 
 log = structlog.get_logger(__name__)
 
 
-async def lookup_drug(name_or_rxcui: str) -> dict:
+async def lookup_drug(name_or_rxcui: str) -> dict[str, Any]:
     """Look up a drug by name or RxNorm CUI.
 
     Returns structured info: RxCUI, canonical name, drug classes, dose rules
@@ -28,7 +34,8 @@ async def lookup_drug(name_or_rxcui: str) -> dict:
     raw = name_or_rxcui.strip()
 
     if is_rxcui(raw):
-        rxcui = validate_rxcui(raw)
+        rxcui: str | None = validate_rxcui(raw)
+        assert rxcui is not None  # validate_rxcui always returns str or raises
         props = await _fetch_properties(rxcui)
     else:
         name = validate_drug_name(raw)
@@ -44,7 +51,7 @@ async def lookup_drug(name_or_rxcui: str) -> dict:
     canonical = props.get("name", raw).lower()
 
     # Dose info from built-in table (canonical name or alias lookup)
-    dose_info: dict | None = None
+    dose_info: dict[str, Any] | None = None
     table_key = DRUG_ALIASES.get(canonical)
     if table_key:
         entry = DOSE_TABLE[table_key]
@@ -75,7 +82,7 @@ async def lookup_drug(name_or_rxcui: str) -> dict:
     }
 
 
-async def _fetch_properties(rxcui: str) -> dict:
+async def _fetch_properties(rxcui: str) -> dict[str, Any]:
     """Fetch RxCUI properties from RxNav."""
     url = f"{settings.rxnav_base_url}/rxcui/{rxcui}/properties.json"
     async with httpx.AsyncClient(timeout=settings.rxnav_timeout_s) as client:
@@ -86,7 +93,7 @@ async def _fetch_properties(rxcui: str) -> dict:
     return props
 
 
-async def _resolve_name(name: str) -> tuple[str | None, dict]:
+async def _resolve_name(name: str) -> tuple[str | None, dict[str, Any]]:
     """Resolve a drug name to RxCUI + properties via RxNav /rxcui.json."""
     url = f"{settings.rxnav_base_url}/rxcui.json"
     async with httpx.AsyncClient(timeout=settings.rxnav_timeout_s) as client:
@@ -98,6 +105,7 @@ async def _resolve_name(name: str) -> tuple[str | None, dict]:
     if not rxnorm_ids:
         return None, {}
 
-    rxcui = rxnorm_ids[0]
+    rxcui: str | None = rxnorm_ids[0]
+    assert rxcui is not None  # rxnorm_ids contains non-None strings
     props = await _fetch_properties(rxcui)
     return rxcui, props

@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 # ---------------------------------------------------------------------------
 # Dose table
 # Keys: lowercase drug name (primary key used for lookups).
@@ -14,7 +16,7 @@ from __future__ import annotations
 # (FDA labels, Lexi-Comp, Clinical Pharmacology). Individual patient dosing
 # must always be verified by a licensed prescriber or pharmacist.
 # ---------------------------------------------------------------------------
-DOSE_TABLE: dict[str, dict] = {
+DOSE_TABLE: dict[str, dict[str, Any]] = {
     "acetaminophen": {
         "rxcui": "161",
         "aliases": ["paracetamol", "tylenol", "apap"],

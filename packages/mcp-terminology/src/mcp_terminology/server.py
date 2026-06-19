@@ -17,13 +17,12 @@ import uuid
 
 import anyio
 import structlog
+from fhir_mcp_shared.langfuse import trace as lf_trace
+from fhir_mcp_shared.logging import configure_logging
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
-
-from fhir_mcp_shared.langfuse import trace as lf_trace
-from fhir_mcp_shared.logging import configure_logging
 
 from mcp_terminology.settings import settings
 from mcp_terminology.tools.expand_valueset import expand_valueset
@@ -39,7 +38,7 @@ _SESSION_ID: str = str(uuid.uuid4())
 def _build_server() -> Server:
     server = Server("mcp-terminology")
 
-    @server.list_tools()
+    @server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
     async def list_tools() -> list[Tool]:
         return [
             Tool(
@@ -159,7 +158,7 @@ def _build_server() -> Server:
             ),
         ]
 
-    @server.call_tool()
+    @server.call_tool()  # type: ignore[untyped-decorator]
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:  # type: ignore[type-arg]
         call_id = str(uuid.uuid4())
         log.info("tool_call", tool=name, call_id=call_id, session_id=_SESSION_ID)
@@ -220,6 +219,7 @@ def _build_server() -> Server:
 
 
 async def _run_stdio(server: Server) -> None:
+    from mcp.server.lowlevel.server import NotificationOptions
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
@@ -228,7 +228,7 @@ async def _run_stdio(server: Server) -> None:
                 server_name="mcp-terminology",
                 server_version="1.0.0",
                 capabilities=server.get_capabilities(
-                    notification_options=None,  # type: ignore[arg-type]
+                    notification_options=NotificationOptions(),
                     experimental_capabilities={},
                 ),
             ),
@@ -238,10 +238,10 @@ async def _run_stdio(server: Server) -> None:
 async def _run_sse(server: Server) -> None:
     """Run the server in SSE mode (HTTP + Server-Sent Events)."""
     try:
+        import uvicorn
         from mcp.server.sse import SseServerTransport
         from starlette.applications import Starlette
         from starlette.routing import Mount, Route
-        import uvicorn
     except ImportError as exc:
         raise RuntimeError(
             "SSE transport requires 'uvicorn' and 'starlette'. "

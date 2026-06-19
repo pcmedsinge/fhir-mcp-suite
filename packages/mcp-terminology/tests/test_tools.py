@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ── validation helpers ───────────────────────────────────────────────────────
 
 def test_resolve_system_alias_loinc() -> None:

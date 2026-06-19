@@ -17,7 +17,6 @@ from typing import Any
 
 import httpx
 import structlog
-
 from fhir_mcp_shared.models.validation import (
     ValidationIssue,
     ValidationReport,

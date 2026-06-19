@@ -25,7 +25,6 @@ import os
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-
 # ── 1. Public HAPI R4 — no auth required ────────────────────────────────────
 # Great for local dev and demos. Rate-limited; shared test data.
 PUBLIC_HAPI = StdioServerParameters(

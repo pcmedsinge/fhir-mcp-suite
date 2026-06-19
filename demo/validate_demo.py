@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 import os
 
-
 BROKEN_PATIENT = {
     "resourceType": "Patient",
     "id": "demo-patient-bad",

@@ -10,7 +10,6 @@ from typing import Any
 
 import httpx
 import structlog
-
 from fhir_mcp_shared.langfuse import span
 
 from mcp_terminology.settings import settings

@@ -4,17 +4,16 @@ from __future__ import annotations
 
 import time
 
+import httpx
 import pytest
 import respx
-import httpx
-
 
 # ── smart_auth unit tests ─────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_acquire_token_success() -> None:
     """client_credentials grant returns and caches an access token."""
-    from mcp_fhir.smart_auth import get_access_token, clear_token_cache
+    from mcp_fhir.smart_auth import clear_token_cache, get_access_token
     clear_token_cache()
 
     with respx.mock:
@@ -36,7 +35,7 @@ async def test_acquire_token_success() -> None:
 @pytest.mark.asyncio
 async def test_acquire_token_cached() -> None:
     """Second call reuses cached token without hitting the network."""
-    from mcp_fhir.smart_auth import get_access_token, clear_token_cache
+    from mcp_fhir.smart_auth import clear_token_cache, get_access_token
     clear_token_cache()
 
     call_count = 0
@@ -94,7 +93,7 @@ async def test_acquire_token_refreshes_on_expiry() -> None:
 @pytest.mark.asyncio
 async def test_acquire_token_http_error() -> None:
     """HTTP 401 from token endpoint raises SmartAuthError."""
-    from mcp_fhir.smart_auth import get_access_token, clear_token_cache, SmartAuthError
+    from mcp_fhir.smart_auth import SmartAuthError, clear_token_cache, get_access_token
     clear_token_cache()
 
     with respx.mock:
@@ -111,7 +110,7 @@ async def test_acquire_token_http_error() -> None:
 @pytest.mark.asyncio
 async def test_acquire_token_missing_access_token() -> None:
     """Response missing access_token field raises SmartAuthError."""
-    from mcp_fhir.smart_auth import get_access_token, clear_token_cache, SmartAuthError
+    from mcp_fhir.smart_auth import SmartAuthError, clear_token_cache, get_access_token
     clear_token_cache()
 
     with respx.mock:
@@ -163,6 +162,7 @@ async def test_get_fhir_headers_no_auth(monkeypatch: pytest.MonkeyPatch) -> None
     """With SMART disabled, headers only contain Accept."""
     monkeypatch.setenv("SMART_ENABLED", "false")
     from importlib import reload
+
     import mcp_fhir.settings as s_mod
     reload(s_mod)
     import mcp_fhir.http_client as hc_mod
@@ -185,6 +185,7 @@ async def test_get_fhir_headers_with_auth(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setenv("SMART_TOKEN_URL", "https://auth.example.com/token")
 
     from importlib import reload
+
     import mcp_fhir.settings as s_mod
     reload(s_mod)
     import mcp_fhir.http_client as hc_mod

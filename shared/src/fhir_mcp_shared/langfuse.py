@@ -32,7 +32,7 @@ from __future__ import annotations
 import os
 import uuid
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from typing import Any
 
 import structlog
@@ -59,7 +59,7 @@ def get_client() -> Any | None:
         return None
 
     try:
-        from langfuse import Langfuse  # type: ignore[import-untyped]
+        from langfuse import Langfuse  # type: ignore[import-untyped,unused-ignore]
     except ImportError as exc:
         log.warning("langfuse_import_failed", error=str(exc))
         return None
@@ -112,10 +112,8 @@ def trace(
         try:
             yield tr
         finally:
-            try:
+            with suppress(Exception):
                 client.flush()
-            except Exception:
-                pass
     except Exception as exc:
         log.warning("langfuse_trace_error", name=name, error=str(exc))
         yield None

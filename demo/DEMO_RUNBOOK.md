@@ -79,13 +79,18 @@ Shows: FHIR version, publisher, resource count from the live HAPI server.
 
 ### Tool 2 — `fhir_search`
 
+In Inspector, fill each field separately (do NOT paste a wrapper JSON):
+
+**`resource_type` field:**
+```
+Patient
+```
+
+**`params` field:**
 ```json
 {
-  "resource_type": "Patient",
-  "params": {
-    "_count": "3",
-    "_sort": "-_lastUpdated"
-  }
+  "_count": "5",
+  "_sort": "-_lastUpdated"
 }
 ```
 
@@ -95,14 +100,19 @@ Shows: paginated Patient bundle with IDs and names. Note one of the returned pat
 
 ### Tool 3 — `fhir_read`
 
-```json
-{
-  "resource_type": "Patient",
-  "resource_id": "example"
-}
+In Inspector, fill each field separately:
+
+**`resource_type` field:**
+```
+Patient
 ```
 
-> Replace `"example"` with an ID from the `fhir_search` results if you want a live record.
+**`resource_id` field:**
+```
+example
+```
+
+> Replace `example` with an ID from the `fhir_search` results if you want a live record.
 
 Shows: Full Patient resource from the FHIR server.
 
@@ -110,20 +120,23 @@ Shows: Full Patient resource from the FHIR server.
 
 ### Tool 4 — `validate_against_profile` (BROKEN — screenshot for Post #1)
 
-Paste a Patient missing all US Core required fields — validator should return errors.
+In Inspector, fill each field separately (do NOT paste a wrapper JSON):
 
+**`resource` field:**
 ```json
 {
-  "resource": {
-    "resourceType": "Patient",
-    "id": "demo-patient-bad",
-    "birthDate": "1985-04-12"
-  },
-  "profile": "us-core-patient"
+  "resourceType": "Patient",
+  "id": "demo-patient-bad",
+  "birthDate": "1985-04-12"
 }
 ```
 
-**Expected result:** `"valid": false`, several errors about missing `identifier`, `name.family`, and `gender`.
+**`profile` field:**
+```
+us-core-patient
+```
+
+**Expected result:** `is_conformant: false`, errors for missing `identifier` and `name`.
 
 📸 **Take screenshot here** — this is the "before" shot.
 
@@ -131,33 +144,26 @@ Paste a Patient missing all US Core required fields — validator should return 
 
 ### Tool 5 — `validate_against_profile` (FIXED — screenshot for Post #1)
 
-Same patient, now with all required US Core fields added.
+Same patient, now with all required US Core fields added. Fill each field separately:
 
+**`resource` field:**
 ```json
 {
-  "resource": {
-    "resourceType": "Patient",
-    "id": "demo-patient-good",
-    "identifier": [
-      {
-        "system": "urn:oid:2.16.840.1.113883.4.6",
-        "value": "1234567890"
-      }
-    ],
-    "name": [
-      {
-        "family": "Rivera",
-        "given": ["Maria"]
-      }
-    ],
-    "gender": "female",
-    "birthDate": "1985-04-12"
-  },
-  "profile": "us-core-patient"
+  "resourceType": "Patient",
+  "id": "demo-patient-good",
+  "identifier": [{"system": "urn:oid:2.16.840.1.113883.4.6", "value": "1234567890"}],
+  "name": [{"family": "Rivera", "given": ["Maria"]}],
+  "gender": "female",
+  "birthDate": "1985-04-12"
 }
 ```
 
-**Expected result:** `"valid": true`, zero errors.
+**`profile` field:**
+```
+us-core-patient
+```
+
+**Expected result:** `is_conformant: true`, only a `dom-6` warning (no errors).
 
 📸 **Take screenshot here** — this is the "after" shot.
 

@@ -16,6 +16,7 @@ Auto-discovery:
 from __future__ import annotations
 
 import asyncio
+
 import structlog
 
 from mcp_fhir.settings import settings

@@ -37,7 +37,11 @@ GOLDEN_FILE = Path(__file__).parent / "golden_queries.json"
 sys.path.insert(0, str(REPO_ROOT / "shared" / "src"))
 sys.path.insert(0, str(REPO_ROOT / "packages" / "mcp-fhir" / "src"))
 
-from fhir_mcp_shared.eval import EvalResult, EvalRunner, GoldenCase  # noqa: E402  (EvalRunner used for assert_threshold + type)
+from fhir_mcp_shared.eval import (  # noqa: E402  (EvalRunner used for assert_threshold + type)
+    EvalResult,
+    EvalRunner,
+    GoldenCase,
+)
 from fhir_mcp_shared.logging import configure_logging  # noqa: E402
 
 configure_logging(level="INFO", fmt="console")

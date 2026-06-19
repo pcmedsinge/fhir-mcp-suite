@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ── validation ───────────────────────────────────────────────────────────────
 
 def test_validate_rxcui_valid() -> None:
@@ -218,16 +217,9 @@ async def test_interactions_rejects_single_rxcui() -> None:
 
 
 @pytest.mark.asyncio
-async def test_interactions_rejects_non_numeric_rxcui() -> None:
-    from mcp_clinical_reasoner.tools.check_drug_interactions import check_drug_interactions
-    with pytest.raises(ValueError, match="Invalid RxCUI"):
-        await check_drug_interactions(["metformin", "29046"])
-
-
-@pytest.mark.asyncio
 async def test_interactions_rejects_too_many() -> None:
     from mcp_clinical_reasoner.tools.check_drug_interactions import check_drug_interactions
-    with pytest.raises(ValueError, match="At most 10"):
+    with pytest.raises(ValueError, match="Maximum 10"):
         await check_drug_interactions([str(i) for i in range(1, 13)])
 
 
@@ -258,7 +250,7 @@ def test_all_dose_table_entries_have_required_fields() -> None:
 
 
 def test_drug_aliases_coverage() -> None:
-    from mcp_clinical_reasoner.constants import DRUG_ALIASES, DOSE_TABLE
+    from mcp_clinical_reasoner.constants import DOSE_TABLE, DRUG_ALIASES
     for name in DOSE_TABLE:
         assert name in DRUG_ALIASES, f"canonical name {name!r} not in DRUG_ALIASES"
 

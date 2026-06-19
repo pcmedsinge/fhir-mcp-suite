@@ -10,7 +10,6 @@ from typing import Any
 
 import httpx
 import structlog
-
 from fhir_mcp_shared.langfuse import span
 
 from mcp_terminology.constants import SYSTEM_DISPLAY, SYSTEM_VALUESET
@@ -19,7 +18,6 @@ from mcp_terminology.validation import (
     resolve_system,
     sanitise_filter,
     validate_max_results,
-    validate_url,
 )
 
 log = structlog.get_logger(__name__)

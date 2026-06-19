@@ -297,8 +297,8 @@ async def test_smart_token_acquisition_epic_sandbox() -> None:
     if not os.getenv("SMART_CLIENT_ID"):
         pytest.skip("SMART_CLIENT_ID not configured — set sandbox credentials in .env")
 
-    from mcp_fhir.smart_auth import get_access_token, clear_token_cache
     from mcp_fhir.settings import settings
+    from mcp_fhir.smart_auth import clear_token_cache, get_access_token
     clear_token_cache()
 
     token_url = settings.smart_token_url or ""
@@ -341,8 +341,8 @@ async def test_authenticated_fhir_read_epic_sandbox() -> None:
         pytest.skip("SMART_ENABLED not set — configure sandbox credentials in .env")
 
     from mcp_fhir.smart_auth import clear_token_cache
-    from mcp_fhir.tools.fhir_search import fhir_search
     from mcp_fhir.tools.fhir_read import fhir_read
+    from mcp_fhir.tools.fhir_search import fhir_search
     clear_token_cache()
 
     # First search to find any patient ID in this sandbox

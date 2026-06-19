@@ -5,6 +5,8 @@ No network calls — uses the DOSE_TABLE in constants.py.
 
 from __future__ import annotations
 
+from typing import Any
+
 import structlog
 
 from mcp_clinical_reasoner.constants import DOSE_TABLE, DRUG_ALIASES
@@ -29,7 +31,7 @@ def _parse_frequency(freq: str) -> float | None:
     return _FREQUENCY_MAP.get(f)
 
 
-async def check_dose(drug: str, dose_mg: float, frequency: str = "") -> dict:
+async def check_dose(drug: str, dose_mg: float, frequency: str = "") -> dict[str, Any]:
     """Check a proposed dose against the built-in dose reference table.
 
     Args:

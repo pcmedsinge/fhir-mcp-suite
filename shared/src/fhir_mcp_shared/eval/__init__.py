@@ -50,7 +50,7 @@ class EvalRunner:
         self.cases = cases
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "EvalRunner":
+    def from_file(cls, path: str | Path) -> EvalRunner:
         """Load golden cases from a JSON file."""
         data = json.loads(Path(path).read_text())
         return cls(cases=[GoldenCase.model_validate(c) for c in data])

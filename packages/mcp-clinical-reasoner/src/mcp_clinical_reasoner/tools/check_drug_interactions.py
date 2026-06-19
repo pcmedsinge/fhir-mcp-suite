@@ -9,6 +9,7 @@ No API key required. Rate limit: 240 requests/minute.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import httpx
 import structlog
@@ -62,7 +63,7 @@ def _aliases(drug_name: str) -> list[str]:
     return [drug_name]
 
 
-async def check_drug_interactions(drug_names: list[str]) -> dict:
+async def check_drug_interactions(drug_names: list[str]) -> dict[str, Any]:
     """Check for drug-drug interactions using FDA drug label data.
 
     Fetches each drug's FDA label and searches the drug_interactions section
@@ -80,7 +81,7 @@ async def check_drug_interactions(drug_names: list[str]) -> dict:
     if len(drug_names) > 10:
         raise ValueError("Maximum 10 drug names allowed.")
 
-    interactions: list[dict] = []
+    interactions: list[dict[str, Any]] = []
     seen_pairs: set[tuple[str, str]] = set()
 
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -91,7 +92,7 @@ async def check_drug_interactions(drug_names: list[str]) -> dict:
             for other_drug in drug_names:
                 if other_drug == primary_drug:
                     continue
-                pair_key = tuple(sorted([primary_drug.lower(), other_drug.lower()]))
+                pair_key: tuple[str, str] = (min(primary_drug.lower(), other_drug.lower()), max(primary_drug.lower(), other_drug.lower()))
                 if pair_key in seen_pairs:
                     continue
                 excerpt = _find_mention(label_text, other_drug)
@@ -123,7 +124,7 @@ async def _fetch_interaction_text(
     client: httpx.AsyncClient, drug_name: str
 ) -> tuple[str | None, str | None]:
     """Fetch a drug's interaction section text from FDA label database."""
-    params = {"search": f"openfda.generic_name:{drug_name}", "limit": 3}
+    params: dict[str, str | int] = {"search": f"openfda.generic_name:{drug_name}", "limit": 3}
     try:
         r = await client.get(_OPENFDA_BASE, params=params)
         if r.status_code == 404:

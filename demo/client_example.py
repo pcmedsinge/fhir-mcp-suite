@@ -21,7 +21,6 @@ from typing import Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-
 # ── Server launch parameters ────────────────────────────────────────────────
 # This is all an MCP host (Claude Desktop, LangGraph, etc.) needs to start
 # your server. Swap the env vars to point at your own FHIR endpoint.

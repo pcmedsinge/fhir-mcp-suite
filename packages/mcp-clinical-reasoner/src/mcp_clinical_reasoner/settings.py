@@ -30,7 +30,7 @@ class Settings(BaseSettings):
         description="MCP transport: 'stdio' (default) or 'sse'.",
         pattern="^(stdio|sse)$",
     )
-    mcp_host: str = Field(default="0.0.0.0", description="Host for SSE transport.")
+    mcp_host: str = Field(default="0.0.0.0", description="Host for SSE transport.")  # noqa: S104
     mcp_port: int = Field(default=8002, description="Port for SSE transport.")
 
     # LangFuse observability (optional)

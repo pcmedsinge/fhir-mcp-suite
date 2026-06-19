@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 
 import httpx
 import structlog
-
 from fhir_mcp_shared.langfuse import span
 
 from mcp_fhir.http_client import get_fhir_headers
@@ -105,7 +104,7 @@ def _extract_next_link(bundle: dict[str, Any]) -> str | None:
             # Validate it is actually an HTTP(S) URL before surfacing it.
             parsed = urlparse(raw)
             if parsed.scheme in ("http", "https") and parsed.netloc:
-                return raw
+                return str(raw)
     return None
 
 

@@ -6,7 +6,6 @@ from typing import Any
 
 import httpx
 import structlog
-
 from fhir_mcp_shared.langfuse import span
 
 from mcp_fhir.http_client import get_fhir_headers

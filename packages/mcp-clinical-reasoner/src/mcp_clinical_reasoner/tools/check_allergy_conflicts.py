@@ -5,6 +5,8 @@ No network calls — uses ALLERGEN_CLASSES and DRUG_TO_CLASSES from constants.py
 
 from __future__ import annotations
 
+from typing import Any
+
 import structlog
 
 from mcp_clinical_reasoner.constants import ALLERGEN_CLASSES, DRUG_ALIASES, DRUG_TO_CLASSES
@@ -32,7 +34,7 @@ _CROSS_REACTIVITY_NOTES = {
 }
 
 
-async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict:
+async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict[str, Any]:
     """Check a target drug for potential conflicts with a patient's known allergies.
 
     Uses the built-in ALLERGEN_CLASSES cross-reactivity table.
@@ -63,14 +65,14 @@ async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict:
             if drug_lower in members:
                 target_classes.append(cls_name)
 
-    conflicts: list[dict] = []
+    conflicts: list[dict[str, Any]] = []
 
     for allergen in validated_allergies:
         allergen_lower = allergen.lower()
         found_conflict = False
 
         # 1. Direct name match: allergen IS the target drug
-        if allergen_lower == drug_lower or allergen_lower == canonical:
+        if allergen_lower in (drug_lower, canonical):
             conflicts.append({
                 "allergen": allergen,
                 "conflict_type": "direct_match",
@@ -84,8 +86,9 @@ async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict:
             continue
 
         # 2. Allergen is a class name, and target drug is in that class
-        if allergen_lower in ALLERGEN_CLASSES:
-            if canonical in ALLERGEN_CLASSES[allergen_lower] or drug_lower in ALLERGEN_CLASSES[allergen_lower]:
+        if allergen_lower in ALLERGEN_CLASSES and (
+            canonical in ALLERGEN_CLASSES[allergen_lower] or drug_lower in ALLERGEN_CLASSES[allergen_lower]
+        ):
                 note = _CROSS_REACTIVITY_NOTES.get((allergen_lower, allergen_lower), "")
                 conflicts.append({
                     "allergen": allergen,
