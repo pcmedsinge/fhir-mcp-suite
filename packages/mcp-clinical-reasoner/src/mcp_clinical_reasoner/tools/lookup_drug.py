@@ -35,7 +35,8 @@ async def lookup_drug(name_or_rxcui: str) -> dict[str, Any]:
 
     if is_rxcui(raw):
         rxcui: str | None = validate_rxcui(raw)
-        assert rxcui is not None  # validate_rxcui always returns str or raises
+        if rxcui is None:  # validate_rxcui raises on bad input, but narrow for mypy
+            raise ValueError(f"Invalid RxCUI: {raw!r}")
         props = await _fetch_properties(rxcui)
     else:
         name = validate_drug_name(raw)
@@ -106,6 +107,7 @@ async def _resolve_name(name: str) -> tuple[str | None, dict[str, Any]]:
         return None, {}
 
     rxcui: str | None = rxnorm_ids[0]
-    assert rxcui is not None  # rxnorm_ids contains non-None strings
+    if rxcui is None:  # narrow for mypy; rxnorm_ids contains non-None strings
+        return None, {}
     props = await _fetch_properties(rxcui)
     return rxcui, props
