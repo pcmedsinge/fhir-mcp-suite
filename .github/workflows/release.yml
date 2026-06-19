@@ -4,12 +4,14 @@ name: Release to PyPI
 #   mcp-fhir-v1.0.0
 #   mcp-terminology-v1.0.0
 #   mcp-clinical-reasoner-v1.0.0
+#   fhir-mcp-shared-v0.1.0
 on:
   push:
     tags:
       - "mcp-fhir-v*"
       - "mcp-terminology-v*"
       - "mcp-clinical-reasoner-v*"
+      - "fhir-mcp-shared-v*"
 
 permissions:
   contents: write   # to create GitHub release
@@ -49,9 +51,15 @@ jobs:
         run: |
           PKG="${{ needs.determine-package.outputs.package }}"
           EXPECTED="${{ needs.determine-package.outputs.version }}"
-          ACTUAL=$(grep '^version' packages/$PKG/pyproject.toml | head -1 | grep -oP '"\K[^"]+')
+          # fhir-mcp-shared lives in shared/, all others in packages/<pkg>/
+          if [ "$PKG" = "fhir-mcp-shared" ]; then
+            TOML="shared/pyproject.toml"
+          else
+            TOML="packages/$PKG/pyproject.toml"
+          fi
+          ACTUAL=$(grep '^version' "$TOML" | head -1 | grep -oP '"\K[^"]+' )
           if [ "$ACTUAL" != "$EXPECTED" ]; then
-            echo "Version mismatch: pyproject.toml has $ACTUAL, tag expects $EXPECTED"
+            echo "Version mismatch: $TOML has $ACTUAL, tag expects $EXPECTED"
             exit 1
           fi
 
@@ -60,13 +68,21 @@ jobs:
 
       - name: Build wheel + sdist
         run: |
-          cd packages/${{ needs.determine-package.outputs.package }}
+          PKG="${{ needs.determine-package.outputs.package }}"
+          if [ "$PKG" = "fhir-mcp-shared" ]; then
+            cd shared
+          else
+            cd packages/$PKG
+          fi
           python -m build --outdir dist/
 
       - name: Publish to PyPI (OIDC trusted publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: packages/${{ needs.determine-package.outputs.package }}/dist/
+          packages-dir: >-
+            ${{ needs.determine-package.outputs.package == 'fhir-mcp-shared'
+              && 'shared/dist/'
+              || format('packages/{0}/dist/', needs.determine-package.outputs.package) }}
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -74,4 +90,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "${{ needs.determine-package.outputs.package }} v${{ needs.determine-package.outputs.version }}"
           generate_release_notes: true
-          files: packages/${{ needs.determine-package.outputs.package }}/dist/*
+          files: >-
+            ${{ needs.determine-package.outputs.package == 'fhir-mcp-shared'
+              && 'shared/dist/*'
+              || format('packages/{0}/dist/*', needs.determine-package.outputs.package) }}

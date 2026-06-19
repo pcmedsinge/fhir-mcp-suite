@@ -5,7 +5,7 @@ description = "Unified LOINC / SNOMED / RxNorm / ICD-10 MCP server"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
-authors = [{ name = "fhir-mcp-suite contributors" }]
+authors = [{ name = "Parag Medsinge", email = "pcmedsinge@gmail.com" }]
 keywords = ["mcp", "terminology", "loinc", "snomed", "rxnorm", "icd", "healthcare"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -20,7 +20,7 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "structlog>=24.4",
-    "fhir-mcp-shared",
+    "fhir-mcp-shared>=0.1.0",
 ]
 
 [project.scripts]

@@ -25,6 +25,18 @@ _RESOURCE_TYPE_RE = re.compile(r"^[A-Z][a-zA-Z]{1,39}$")
 _PARAM_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.\-:]{0,63}$")
 
 
+def _normalize_netloc(scheme: str, hostname: str | None, port: int | None) -> str:
+    """Return canonical ``host[:port]``, stripping scheme-default ports.
+
+    Prevents the SSRF guard from rejecting valid next-page URLs that carry an
+    explicit default port (e.g. ``example.com:443`` vs ``example.com``).
+    """
+    host = hostname or ""
+    if port is None or (scheme == "https" and port == 443) or (scheme == "http" and port == 80):
+        return host
+    return f"{host}:{port}"
+
+
 def _validate_search_params(params: dict[str, str]) -> dict[str, str]:
     """Reject any parameter name that doesn't match the FHIR search-param grammar.
 
@@ -118,7 +130,11 @@ async def fhir_search_next(next_url: str) -> dict[str, Any]:
         raise ValueError("next_url must be an absolute HTTP(S) URL")
 
     # SSRF guard: next_url host must match the configured FHIR server host.
-    if parsed.netloc != configured.netloc:
+    # Normalize both sides to strip implicit default ports (e.g. :443 on https)
+    # so that proxied HAPI responses with explicit ports are not incorrectly rejected.
+    if _normalize_netloc(parsed.scheme, parsed.hostname, parsed.port) != _normalize_netloc(
+        configured.scheme, configured.hostname, configured.port
+    ):
         raise ValueError(
             f"next_url host {parsed.netloc!r} does not match configured "
             f"FHIR server {configured.netloc!r}"

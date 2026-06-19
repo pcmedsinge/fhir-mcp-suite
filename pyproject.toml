@@ -35,7 +35,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["packages/mcp-fhir/tests", "packages/mcp-terminology/tests", "packages/mcp-clinical-reasoner/tests", "shared/tests"]
 asyncio_mode = "auto"
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers --import-mode=importlib"
 markers = [
     "integration: requires external services (HAPI, FHIR server)",
     "eval: long-running golden-query eval suite",

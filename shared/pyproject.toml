@@ -5,13 +5,33 @@ description = "Shared utilities for the fhir-mcp-suite monorepo (logging, LangFu
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
-authors = [{ name = "fhir-mcp-suite contributors" }]
+authors = [{ name = "Parag Medsinge", email = "pcmedsinge@gmail.com" }]
+keywords = ["mcp", "fhir", "healthcare", "langfuse", "logging", "pydantic", "eval"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "structlog>=24.4",
     "langfuse>=3.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/pcmedsinge/fhir-mcp-suite"
+Repository = "https://github.com/pcmedsinge/fhir-mcp-suite"
+"Bug Tracker" = "https://github.com/pcmedsinge/fhir-mcp-suite/issues"
+Documentation = "https://pcmedsinge.github.io/fhir-mcp-suite/"
+Changelog = "https://github.com/pcmedsinge/fhir-mcp-suite/releases"
 
 [build-system]
 requires = ["hatchling"]

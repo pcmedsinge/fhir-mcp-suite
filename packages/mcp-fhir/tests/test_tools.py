@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import httpx
 import pytest
+import respx
+
+# Default FHIR base URL used by settings when no env override is present.
+_BASE = "https://hapi.fhir.org/baseR4"
 
 
 @pytest.mark.asyncio
@@ -84,6 +89,150 @@ def test_extract_next_link_rejects_bad_url() -> None:
 
     bundle = {"link": [{"relation": "next", "url": "file:///etc/shadow"}]}
     assert _extract_next_link(bundle) is None
+
+
+# ── mocked HTTP tests — no external services, uses respx ─────────────────────
+
+
+@pytest.mark.asyncio
+async def test_fhir_read_success_mocked() -> None:
+    """200 response returns the resource dict."""
+    from mcp_fhir.tools.fhir_read import fhir_read
+
+    patient = {"resourceType": "Patient", "id": "p1", "name": [{"family": "Doe"}]}
+    with respx.mock:
+        respx.get(f"{_BASE}/Patient/p1").mock(return_value=httpx.Response(200, json=patient))
+        result = await fhir_read("Patient", "p1")
+    assert result["resourceType"] == "Patient"
+    assert result["id"] == "p1"
+
+
+@pytest.mark.asyncio
+async def test_fhir_read_404_raises() -> None:
+    """404 from FHIR server propagates as HTTPStatusError."""
+    from mcp_fhir.tools.fhir_read import fhir_read
+
+    with respx.mock:
+        respx.get(f"{_BASE}/Patient/no-such-id").mock(
+            return_value=httpx.Response(404, json={"resourceType": "OperationOutcome"})
+        )
+        with pytest.raises(httpx.HTTPStatusError):
+            await fhir_read("Patient", "no-such-id")
+
+
+@pytest.mark.asyncio
+async def test_fhir_read_500_raises() -> None:
+    """500 from FHIR server propagates as HTTPStatusError."""
+    from mcp_fhir.tools.fhir_read import fhir_read
+
+    with respx.mock:
+        respx.get(f"{_BASE}/Patient/server-error").mock(return_value=httpx.Response(500))
+        with pytest.raises(httpx.HTTPStatusError):
+            await fhir_read("Patient", "server-error")
+
+
+@pytest.mark.asyncio
+async def test_fhir_read_timeout_raises() -> None:
+    """Timeout propagates as TimeoutException."""
+    from mcp_fhir.tools.fhir_read import fhir_read
+
+    with respx.mock:
+        respx.get(f"{_BASE}/Patient/slow").mock(side_effect=httpx.ReadTimeout("timed out"))
+        with pytest.raises(httpx.TimeoutException):
+            await fhir_read("Patient", "slow")
+
+
+@pytest.mark.asyncio
+async def test_fhir_search_success_attaches_next_url() -> None:
+    """Bundle with a next link gets _next_url attached."""
+    from mcp_fhir.tools.fhir_search import fhir_search
+
+    bundle = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "total": 200,
+        "entry": [{"resource": {"resourceType": "Patient", "id": "p1"}}],
+        "link": [
+            {"relation": "self", "url": f"{_BASE}/Patient"},
+            {"relation": "next", "url": f"{_BASE}/Patient?_getpagesoffset=50"},
+        ],
+    }
+    with respx.mock:
+        respx.get(f"{_BASE}/Patient").mock(return_value=httpx.Response(200, json=bundle))
+        result = await fhir_search("Patient", {"_count": "50"})
+    assert result["resourceType"] == "Bundle"
+    assert "_next_url" in result
+    assert "_getpagesoffset=50" in result["_next_url"]
+
+
+@pytest.mark.asyncio
+async def test_fhir_search_500_raises() -> None:
+    """500 from FHIR server propagates as HTTPStatusError."""
+    from mcp_fhir.tools.fhir_search import fhir_search
+
+    with respx.mock:
+        respx.get(f"{_BASE}/Observation").mock(return_value=httpx.Response(500))
+        with pytest.raises(httpx.HTTPStatusError):
+            await fhir_search("Observation")
+
+
+@pytest.mark.asyncio
+async def test_fhir_capabilities_success_mocked() -> None:
+    """Successful capabilities call returns summarized dict."""
+    from mcp_fhir.tools.fhir_capabilities import fhir_capabilities
+
+    cap = {
+        "resourceType": "CapabilityStatement",
+        "fhirVersion": "4.0.1",
+        "software": {"name": "HAPI FHIR", "version": "7.0.0"},
+        "rest": [
+            {
+                "resource": [
+                    {
+                        "type": "Patient",
+                        "interaction": [{"code": "read"}, {"code": "search-type"}],
+                        "searchParam": [{"name": "family"}, {"name": "birthdate"}],
+                    }
+                ]
+            }
+        ],
+    }
+    with respx.mock:
+        respx.get(f"{_BASE}/metadata").mock(return_value=httpx.Response(200, json=cap))
+        result = await fhir_capabilities()
+    assert result["fhir_version"] == "4.0.1"
+    assert result["software"]["name"] == "HAPI FHIR"
+    assert result["resource_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_fhir_capabilities_500_raises() -> None:
+    """500 from metadata endpoint propagates as HTTPStatusError."""
+    from mcp_fhir.tools.fhir_capabilities import fhir_capabilities
+
+    with respx.mock:
+        respx.get(f"{_BASE}/metadata").mock(return_value=httpx.Response(500))
+        with pytest.raises(httpx.HTTPStatusError):
+            await fhir_capabilities()
+
+
+@pytest.mark.asyncio
+async def test_fhir_search_next_explicit_default_port() -> None:
+    """next_url with explicit :443 on HTTPS is accepted (same host, default port)."""
+    from mcp_fhir.tools.fhir_search import fhir_search_next
+
+    bundle = {"resourceType": "Bundle", "type": "searchset", "entry": []}
+    with respx.mock:
+        respx.get("https://hapi.fhir.org:443/baseR4/Patient?_getpagesoffset=50").mock(
+            return_value=httpx.Response(200, json=bundle)
+        )
+        result = await fhir_search_next(
+            "https://hapi.fhir.org:443/baseR4/Patient?_getpagesoffset=50"
+        )
+    assert result["resourceType"] == "Bundle"
+
+
+# ── validate_against_profile ──────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

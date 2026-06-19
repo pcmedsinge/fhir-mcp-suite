@@ -40,6 +40,10 @@ jobs:
         run: uv run mypy shared/src
       - name: mypy — mcp-fhir
         run: uv run mypy packages/mcp-fhir/src
+      - name: mypy — mcp-terminology
+        run: uv run mypy packages/mcp-terminology/src
+      - name: mypy — mcp-clinical-reasoner
+        run: uv run mypy packages/mcp-clinical-reasoner/src
 
   test:
     name: Unit tests — ${{ matrix.package }}
