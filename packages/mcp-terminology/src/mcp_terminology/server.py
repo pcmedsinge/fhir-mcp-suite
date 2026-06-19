@@ -38,7 +38,7 @@ _SESSION_ID: str = str(uuid.uuid4())
 def _build_server() -> Server:
     server = Server("mcp-terminology")
 
-    @server.list_tools()  # type: ignore[no-untyped-call, untyped-decorator]
+    @server.list_tools()  # type: ignore
     async def list_tools() -> list[Tool]:
         return [
             Tool(
@@ -158,7 +158,7 @@ def _build_server() -> Server:
             ),
         ]
 
-    @server.call_tool()  # type: ignore[untyped-decorator]
+    @server.call_tool()  # type: ignore
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:  # type: ignore[type-arg]
         call_id = str(uuid.uuid4())
         log.info("tool_call", tool=name, call_id=call_id, session_id=_SESSION_ID)

@@ -34,6 +34,7 @@ ignore = ["E501", "RUF001", "RUF002"]   # RUF001/002: en-dashes in medical dose 
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 testpaths = ["packages/mcp-fhir/tests", "packages/mcp-terminology/tests", "packages/mcp-clinical-reasoner/tests", "shared/tests"]

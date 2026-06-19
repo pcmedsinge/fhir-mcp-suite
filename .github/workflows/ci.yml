@@ -19,6 +19,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
+          python-version: "3.12"
       - name: Install workspace dev deps
         run: uv sync --all-packages
       - name: Ruff lint
@@ -34,6 +35,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
+          python-version: "3.12"
       - name: Install workspace dev deps
         run: uv sync --all-packages
       - name: mypy — shared
@@ -61,6 +63,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
+          python-version: "3.12"
       - name: Install workspace
         run: uv sync --all-packages
       - name: Run unit tests (no integration)
@@ -96,6 +99,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           version: "latest"
+          python-version: "3.12"
       - name: Install build deps
         run: uv pip install build hatchling
       - name: Build wheel

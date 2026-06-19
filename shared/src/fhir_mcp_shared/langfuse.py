@@ -59,7 +59,7 @@ def get_client() -> Any | None:
         return None
 
     try:
-        from langfuse import Langfuse  # type: ignore[import-untyped,unused-ignore]
+        from langfuse import Langfuse  # type: ignore
     except ImportError as exc:
         log.warning("langfuse_import_failed", error=str(exc))
         return None
