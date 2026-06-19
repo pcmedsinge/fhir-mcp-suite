@@ -18,9 +18,7 @@ def validate_rxcui(rxcui: str) -> str:
     if not v:
         raise ValueError("rxcui must not be empty")
     if not _RXCUI_RE.match(v):
-        raise ValueError(
-            f"Invalid RxCUI {v!r}. Must be 1-8 decimal digits (e.g. '6809')."
-        )
+        raise ValueError(f"Invalid RxCUI {v!r}. Must be 1-8 decimal digits (e.g. '6809').")
     return v
 
 
@@ -31,8 +29,7 @@ def validate_drug_name(name: str) -> str:
         raise ValueError("drug name must not be empty")
     if not _DRUG_NAME_RE.match(v):
         raise ValueError(
-            f"Invalid drug name {v!r}. "
-            "Use only letters, digits, hyphens, spaces, '.', '()', '/'."
+            f"Invalid drug name {v!r}. Use only letters, digits, hyphens, spaces, '.', '()', '/'."
         )
     return v
 
@@ -44,9 +41,7 @@ def validate_rxcuis_list(rxcuis: list[str], min_len: int = 2, max_len: int = 10)
             f"At least {min_len} RxCUIs required for interaction check; got {len(rxcuis)}."
         )
     if len(rxcuis) > max_len:
-        raise ValueError(
-            f"At most {max_len} RxCUIs allowed; got {len(rxcuis)}."
-        )
+        raise ValueError(f"At most {max_len} RxCUIs allowed; got {len(rxcuis)}.")
     return [validate_rxcui(r) for r in rxcuis]
 
 

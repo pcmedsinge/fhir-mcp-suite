@@ -19,6 +19,7 @@ def test_eval_runner_all_pass() -> None:
         return {"resourceType": "Patient", "id": "1"}
 
     import asyncio
+
     results = asyncio.run(runner.run(invoke_fn=invoke))
     assert len(results) == 1
     assert results[0].passed
@@ -41,9 +42,11 @@ def test_eval_runner_fail_threshold() -> None:
         return {}
 
     import asyncio
+
     results = asyncio.run(runner.run(invoke_fn=invoke))
     assert not results[0].passed
 
     import pytest
+
     with pytest.raises(AssertionError, match="pass rate"):
         EvalRunner.assert_threshold(results, min_pass_rate=0.85)

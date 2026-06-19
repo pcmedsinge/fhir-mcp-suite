@@ -51,9 +51,7 @@ async def main() -> None:
     # ── Step 1: broken resource ──────────────────────────────────────────
     _sep("STEP 1 — Validate a Patient missing required US Core fields")
     print("  Sending resource with no identifier, no name, no gender …")
-    result = await validate_against_profile(
-        resource=BROKEN_PATIENT, profile="us-core-patient"
-    )
+    result = await validate_against_profile(resource=BROKEN_PATIENT, profile="us-core-patient")
     valid = result.get("valid")
     issues = result.get("issues", [])
     errors = [i for i in issues if i.get("severity") in ("error", "fatal")]
@@ -69,9 +67,7 @@ async def main() -> None:
     # ── Step 2: fixed resource ───────────────────────────────────────────
     _sep("STEP 2 — Fix the resource (add identifier + name + gender)")
     print("  Sending corrected Patient resource …")
-    result2 = await validate_against_profile(
-        resource=FIXED_PATIENT, profile="us-core-patient"
-    )
+    result2 = await validate_against_profile(resource=FIXED_PATIENT, profile="us-core-patient")
     valid2 = result2.get("valid")
     issues2 = result2.get("issues", [])
     errors2 = [i for i in issues2 if i.get("severity") in ("error", "fatal")]

@@ -2,6 +2,7 @@
 Take MCP Inspector screenshots for mcp-clinical-reasoner LinkedIn post.
 Runs 4 tools and saves screenshots to snip1..snip4_*.png
 """
+
 import asyncio
 
 from playwright.async_api import async_playwright
@@ -23,9 +24,11 @@ async def run_tool(page, tool_ref, input_fields: dict):
     for placeholder, value in input_fields.items():
         page.get_by_role("textbox").filter(has_text="").nth(0)
         # Use label-based selector
-        await page.locator('input, textarea').filter(
-            has=page.locator(f'[placeholder*="{placeholder}"]')
-        ).fill(value)
+        await (
+            page.locator("input, textarea")
+            .filter(has=page.locator(f'[placeholder*="{placeholder}"]'))
+            .fill(value)
+        )
     await page.get_by_role("button", name="Run Tool").click()
     await wait_for_result(page)
 
@@ -54,7 +57,9 @@ async def main():
         await page.get_by_role("button", name="Run Tool").click()
         await wait_for_result(page)
         # Scroll result into view
-        await page.evaluate("document.querySelector('h4') && document.querySelector('h4').scrollIntoView()")
+        await page.evaluate(
+            "document.querySelector('h4') && document.querySelector('h4').scrollIntoView()"
+        )
         await page.wait_for_timeout(300)
         await page.screenshot(path=f"{OUT}/snip1_lookup_drug.png")
         print("✅ snip1_lookup_drug.png")
@@ -66,7 +71,9 @@ async def main():
         await drug_box.fill('["ibuprofen", "lisinopril", "metformin"]')
         await page.get_by_role("button", name="Run Tool").click()
         await wait_for_result(page)
-        await page.evaluate("document.querySelector('h4') && document.querySelector('h4').scrollIntoView()")
+        await page.evaluate(
+            "document.querySelector('h4') && document.querySelector('h4').scrollIntoView()"
+        )
         await page.wait_for_timeout(300)
         await page.screenshot(path=f"{OUT}/snip2_check_drug_interactions.png")
         print("✅ snip2_check_drug_interactions.png")
@@ -80,7 +87,9 @@ async def main():
         await dose_field.fill("800")
         await page.get_by_role("button", name="Run Tool").click()
         await wait_for_result(page)
-        await page.evaluate("document.querySelector('h4') && document.querySelector('h4').scrollIntoView()")
+        await page.evaluate(
+            "document.querySelector('h4') && document.querySelector('h4').scrollIntoView()"
+        )
         await page.wait_for_timeout(300)
         await page.screenshot(path=f"{OUT}/snip3_check_dose.png")
         print("✅ snip3_check_dose.png")
@@ -94,7 +103,9 @@ async def main():
         await drug_name_field.fill("ibuprofen")
         await page.get_by_role("button", name="Run Tool").click()
         await wait_for_result(page)
-        await page.evaluate("document.querySelector('h4') && document.querySelector('h4').scrollIntoView()")
+        await page.evaluate(
+            "document.querySelector('h4') && document.querySelector('h4').scrollIntoView()"
+        )
         await page.wait_for_timeout(300)
         await page.screenshot(path=f"{OUT}/snip4_check_allergy_conflicts.png")
         print("✅ snip4_check_allergy_conflicts.png")

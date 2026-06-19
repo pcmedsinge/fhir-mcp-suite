@@ -49,22 +49,27 @@ log = structlog.get_logger("eval.clinical_reasoner")
 
 # ── Tool dispatch ─────────────────────────────────────────────────────────────
 
+
 async def _invoke(tool: str, input_args: dict[str, Any]) -> dict[str, Any]:
     """Route to the appropriate async tool function."""
     if tool == "lookup_drug":
         from mcp_clinical_reasoner.tools.lookup_drug import lookup_drug
+
         return await lookup_drug(**input_args)
 
     if tool == "check_drug_interactions":
         from mcp_clinical_reasoner.tools.check_drug_interactions import check_drug_interactions
+
         return await check_drug_interactions(**input_args)
 
     if tool == "check_dose":
         from mcp_clinical_reasoner.tools.check_dose import check_dose
+
         return await check_dose(**input_args)
 
     if tool == "check_allergy_conflicts":
         from mcp_clinical_reasoner.tools.check_allergy_conflicts import check_allergy_conflicts
+
         return await check_allergy_conflicts(**input_args)
 
     raise ValueError(f"Unknown tool: {tool!r}")
@@ -72,9 +77,8 @@ async def _invoke(tool: str, input_args: dict[str, Any]) -> dict[str, Any]:
 
 # ── Programmatic assertions ───────────────────────────────────────────────────
 
-def _programmatic_check(
-    case: GoldenCase, result: dict[str, Any]
-) -> tuple[bool, str]:
+
+def _programmatic_check(case: GoldenCase, result: dict[str, Any]) -> tuple[bool, str]:
     """Handle special assertion keys in expected.
 
     Keys:
@@ -108,13 +112,15 @@ def _programmatic_check(
     return True, "; ".join(msg for _, msg in checks)
 
 
-def _subset_check(
-    expected: dict[str, Any], actual: dict[str, Any]
-) -> tuple[bool, float, str]:
+def _subset_check(expected: dict[str, Any], actual: dict[str, Any]) -> tuple[bool, float, str]:
     """Check plain key=value assertions from expected dict, skipping special keys."""
     SPECIAL = {
-        "found", "has_high_severity", "has_conflicts", "assessment",
-        "canonical_name", "error_contains",
+        "found",
+        "has_high_severity",
+        "has_conflicts",
+        "assessment",
+        "canonical_name",
+        "error_contains",
     }
     plain = {k: v for k, v in expected.items() if k not in SPECIAL}
     if not plain:
@@ -132,9 +138,9 @@ def _subset_check(
 
 # ── Eval loop ─────────────────────────────────────────────────────────────────
 
+
 async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
-    cases = [GoldenCase.model_validate(c)
-             for c in json.loads(GOLDEN_FILE.read_text())]
+    cases = [GoldenCase.model_validate(c) for c in json.loads(GOLDEN_FILE.read_text())]
 
     results: list[EvalResult] = []
     for case in cases:
@@ -151,7 +157,9 @@ async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
 
             if error_expected:
                 er = EvalResult(
-                    case_id=case.id, passed=False, score=0.0,
+                    case_id=case.id,
+                    passed=False,
+                    score=0.0,
                     actual=result,
                     notes=f"Expected error containing {case.expected['error_contains']!r} but tool succeeded",
                 )
@@ -163,15 +171,21 @@ async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
                 score = plain_score if plain_ok else plain_score * 0.5
                 if not prog_ok:
                     score = min(score, 0.5)
-                notes = "; ".join(filter(None, [
-                    plain_notes if not plain_ok else "",
-                    prog_notes if not prog_ok else prog_notes,
-                ]))
+                notes = "; ".join(
+                    filter(
+                        None,
+                        [
+                            plain_notes if not plain_ok else "",
+                            prog_notes if not prog_ok else prog_notes,
+                        ],
+                    )
+                )
                 if not notes:
                     notes = "all assertions passed"
 
-                er = EvalResult(case_id=case.id, passed=passed, score=score,
-                                actual=result, notes=notes)
+                er = EvalResult(
+                    case_id=case.id, passed=passed, score=score, actual=result, notes=notes
+                )
 
         except Exception as exc:
             elapsed = time.perf_counter() - t0
@@ -181,14 +195,16 @@ async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
                 needle = case.expected["error_contains"].lower()
                 ok = needle in exc_str.lower()
                 er = EvalResult(
-                    case_id=case.id, passed=ok, score=1.0 if ok else 0.0,
-                    notes=f"error={exc_str[:120]!r}" + (
-                        "" if ok else f" (expected {needle!r})"
-                    ),
+                    case_id=case.id,
+                    passed=ok,
+                    score=1.0 if ok else 0.0,
+                    notes=f"error={exc_str[:120]!r}" + ("" if ok else f" (expected {needle!r})"),
                 )
             else:
                 er = EvalResult(
-                    case_id=case.id, passed=False, score=0.0,
+                    case_id=case.id,
+                    passed=False,
+                    score=0.0,
                     notes=f"unexpected exception: {exc_str[:120]}",
                 )
 
@@ -207,34 +223,38 @@ async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
 
 # ── Output helpers ────────────────────────────────────────────────────────────
 
+
 def _print_summary(results: list[EvalResult]) -> None:
     passed = sum(r.passed for r in results)
     total = len(results)
     rate = passed / total if total else 0.0
 
-    print(f"\n{'─'*62}")
+    print(f"\n{'─' * 62}")
     print(f"  mcp-clinical-reasoner eval — {passed}/{total} passed ({rate:.1%})")
-    print(f"{'─'*62}")
+    print(f"{'─' * 62}")
     for r in results:
         icon = "✓" if r.passed else "✗"
         print(f"  {icon} {r.case_id:<40}  {(r.notes or '')[:60]}")
-    print(f"{'─'*62}\n")
+    print(f"{'─' * 62}\n")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="mcp-clinical-reasoner golden eval runner"
+    parser = argparse.ArgumentParser(description="mcp-clinical-reasoner golden eval runner")
+    parser.add_argument(
+        "--tags",
+        nargs="*",
+        help="Filter by tag(s): smoke lookup interactions dose allergy error security integration alias",
+    )
+    parser.add_argument("--ci", action="store_true", help="Exit 1 if pass rate below threshold")
+    parser.add_argument(
+        "--threshold", type=float, default=0.85, help="Minimum pass rate for CI gate (default 0.85)"
     )
     parser.add_argument(
-        "--tags", nargs="*",
-        help="Filter by tag(s): smoke lookup interactions dose allergy error security integration alias"
+        "--output-json",
+        type=Path,
+        default=None,
+        help="Write results JSON to path (for CI artefacts)",
     )
-    parser.add_argument("--ci", action="store_true",
-                        help="Exit 1 if pass rate below threshold")
-    parser.add_argument("--threshold", type=float, default=0.85,
-                        help="Minimum pass rate for CI gate (default 0.85)")
-    parser.add_argument("--output-json", type=Path, default=None,
-                        help="Write results JSON to path (for CI artefacts)")
     args = parser.parse_args()
 
     results = asyncio.run(run_eval(tags=args.tags))
@@ -242,9 +262,7 @@ def main() -> None:
 
     if args.output_json:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
-        args.output_json.write_text(
-            json.dumps([r.model_dump() for r in results], indent=2)
-        )
+        args.output_json.write_text(json.dumps([r.model_dump() for r in results], indent=2))
         log.info("results_written", path=str(args.output_json))
 
     if args.ci:

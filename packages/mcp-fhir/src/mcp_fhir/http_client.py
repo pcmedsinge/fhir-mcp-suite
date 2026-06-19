@@ -46,6 +46,7 @@ async def _resolve_token_url() -> str:
         if _discovered_token_url:
             return _discovered_token_url
         from mcp_fhir.smart_auth import discover_token_url
+
         url = await discover_token_url(settings.fhir_base_url)
         _discovered_token_url = url
         return url
@@ -70,6 +71,7 @@ async def get_fhir_headers() -> dict[str, str]:
 
     token_url = await _resolve_token_url()
     from mcp_fhir.smart_auth import get_access_token
+
     token = await get_access_token(
         token_url=token_url,
         client_id=settings.smart_client_id,

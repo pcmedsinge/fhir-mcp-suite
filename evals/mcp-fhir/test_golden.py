@@ -27,9 +27,7 @@ def test_golden_suite_threshold(request: pytest.FixtureRequest) -> None:
     import importlib.util
 
     threshold = float(request.config.getoption("--threshold", default="0.85"))
-    spec = importlib.util.spec_from_file_location(
-        "run_eval", Path(__file__).parent / "run_eval.py"
-    )
+    spec = importlib.util.spec_from_file_location("run_eval", Path(__file__).parent / "run_eval.py")
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]
@@ -46,9 +44,7 @@ def test_golden_smoke_threshold() -> None:
     """Run only 'smoke' cases — must all pass."""
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location(
-        "run_eval", Path(__file__).parent / "run_eval.py"
-    )
+    spec = importlib.util.spec_from_file_location("run_eval", Path(__file__).parent / "run_eval.py")
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[union-attr]

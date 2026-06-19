@@ -38,6 +38,4 @@ class ValidationReport(BaseModel):
             for i in self.issues
             if i.severity in (ValidationSeverity.ERROR, ValidationSeverity.FATAL)
         )
-        self.warning_count = sum(
-            1 for i in self.issues if i.severity == ValidationSeverity.WARNING
-        )
+        self.warning_count = sum(1 for i in self.issues if i.severity == ValidationSeverity.WARNING)

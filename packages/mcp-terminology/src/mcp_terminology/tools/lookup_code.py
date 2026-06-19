@@ -90,6 +90,7 @@ async def lookup_code(
     parsed = _parse_parameters(data)
 
     from mcp_terminology.constants import SYSTEM_DISPLAY
+
     return {
         "system_url": system_url,
         "system_name": SYSTEM_DISPLAY.get(system_url, system_url),

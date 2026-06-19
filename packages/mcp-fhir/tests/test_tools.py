@@ -39,9 +39,7 @@ async def test_fhir_search_strips_bad_params() -> None:
     """Parameter names with injection-style characters are silently dropped."""
     from mcp_fhir.tools.fhir_search import _validate_search_params
 
-    result = _validate_search_params(
-        {"family": "Smith", "'; DROP TABLE--": "evil", "_count": "10"}
-    )
+    result = _validate_search_params({"family": "Smith", "'; DROP TABLE--": "evil", "_count": "10"})
     assert "family" in result
     assert "_count" in result
     assert "'; DROP TABLE--" not in result
@@ -289,21 +287,25 @@ async def test_fhir_capabilities_live() -> None:
 # Requires .env with SMART_ENABLED=true + SMART_CLIENT_ID + SMART_CLIENT_SECRET
 #           + SMART_TOKEN_URL + FHIR_BASE_URL pointing at the sandbox.
 
+
 @pytest.mark.asyncio
 @pytest.mark.smart_integration
 async def test_smart_token_acquisition_epic_sandbox() -> None:
     """Acquire a real token from Epic sandbox (requires .env credentials)."""
     import os
+
     if not os.getenv("SMART_CLIENT_ID"):
         pytest.skip("SMART_CLIENT_ID not configured — set sandbox credentials in .env")
 
     from mcp_fhir.settings import settings
     from mcp_fhir.smart_auth import clear_token_cache, get_access_token
+
     clear_token_cache()
 
     token_url = settings.smart_token_url or ""
     if not token_url:
         from mcp_fhir.smart_auth import discover_token_url
+
         token_url = await discover_token_url(settings.fhir_base_url)
 
     token = await get_access_token(
@@ -321,11 +323,13 @@ async def test_smart_token_acquisition_epic_sandbox() -> None:
 async def test_authenticated_fhir_search_epic_sandbox() -> None:
     """Run fhir_search with real Bearer token against Epic/Cerner sandbox."""
     import os
+
     if not os.getenv("SMART_ENABLED"):
         pytest.skip("SMART_ENABLED not set — configure sandbox credentials in .env")
 
     from mcp_fhir.smart_auth import clear_token_cache
     from mcp_fhir.tools.fhir_search import fhir_search
+
     clear_token_cache()
 
     bundle = await fhir_search("Patient", {"_count": "1"})
@@ -337,12 +341,14 @@ async def test_authenticated_fhir_search_epic_sandbox() -> None:
 async def test_authenticated_fhir_read_epic_sandbox() -> None:
     """Read a known synthetic patient from Epic sandbox with Bearer auth."""
     import os
+
     if not os.getenv("SMART_ENABLED"):
         pytest.skip("SMART_ENABLED not set — configure sandbox credentials in .env")
 
     from mcp_fhir.smart_auth import clear_token_cache
     from mcp_fhir.tools.fhir_read import fhir_read
     from mcp_fhir.tools.fhir_search import fhir_search
+
     clear_token_cache()
 
     # First search to find any patient ID in this sandbox
@@ -355,4 +361,3 @@ async def test_authenticated_fhir_read_epic_sandbox() -> None:
     resource = await fhir_read("Patient", patient_id)
     assert resource.get("resourceType") == "Patient"
     assert resource.get("id") == patient_id
-

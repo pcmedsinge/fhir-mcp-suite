@@ -28,16 +28,17 @@ SERVER = StdioServerParameters(
     command="uv",
     args=["run", "--package", "mcp-fhir", "mcp-fhir"],
     env={
-        **os.environ,                                 # inherit PATH, HOME, etc.
-        "FHIR_BASE_URL":      "https://hapi.fhir.org/baseR4",
+        **os.environ,  # inherit PATH, HOME, etc.
+        "FHIR_BASE_URL": "https://hapi.fhir.org/baseR4",
         "HAPI_VALIDATOR_URL": "http://localhost:8082",
-        "SMART_ENABLED":      "false",
-        "LOG_FORMAT":         "console",
+        "SMART_ENABLED": "false",
+        "LOG_FORMAT": "console",
     },
 )
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
 
 def _text(result: Any) -> str:
     """Extract the text payload from a CallToolResult."""
@@ -59,6 +60,7 @@ def _print_section(title: str) -> None:
 
 
 # ── Example calls ────────────────────────────────────────────────────────────
+
 
 async def main() -> None:
     async with stdio_client(SERVER) as (read, write):
@@ -98,7 +100,7 @@ async def main() -> None:
                 if r.get("name"):
                     n = r["name"][0]
                     name = " ".join(n.get("given", []) + [n.get("family", "")]).strip()
-                print(f"    [{i+1}] id={r.get('id')}  name={name or 'n/a'}")
+                print(f"    [{i + 1}] id={r.get('id')}  name={name or 'n/a'}")
                 if i == 0:
                     first_id = r.get("id")
 
@@ -154,7 +156,9 @@ async def main() -> None:
                 },
             )
             report_a = _json(broken)
-            errors_a = [i for i in report_a.get("issues", []) if i.get("severity") in ("error", "fatal")]
+            errors_a = [
+                i for i in report_a.get("issues", []) if i.get("severity") in ("error", "fatal")
+            ]
             print(f"  valid={report_a.get('valid')}  errors={len(errors_a)}")
             for e in errors_a[:3]:
                 print(f"    ✗  {e.get('message', '')}")
@@ -167,7 +171,9 @@ async def main() -> None:
                     "resource": {
                         "resourceType": "Patient",
                         "id": "demo-patient-good",
-                        "identifier": [{"system": "urn:oid:2.16.840.1.113883.4.6", "value": "1234567890"}],
+                        "identifier": [
+                            {"system": "urn:oid:2.16.840.1.113883.4.6", "value": "1234567890"}
+                        ],
                         "name": [{"family": "Rivera", "given": ["Maria"]}],
                         "gender": "female",
                         "birthDate": "1985-04-12",
@@ -176,7 +182,9 @@ async def main() -> None:
                 },
             )
             report_b = _json(fixed)
-            errors_b = [i for i in report_b.get("issues", []) if i.get("severity") in ("error", "fatal")]
+            errors_b = [
+                i for i in report_b.get("issues", []) if i.get("severity") in ("error", "fatal")
+            ]
             print(f"  valid={report_b.get('valid')}  errors={len(errors_b)}")
 
             print(f"\n{'═' * 60}")

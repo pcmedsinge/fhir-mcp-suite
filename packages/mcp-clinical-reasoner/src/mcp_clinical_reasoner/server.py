@@ -55,8 +55,7 @@ def _build_server() -> Server:
                         "name_or_rxcui": {
                             "type": "string",
                             "description": (
-                                "Drug name (e.g. 'metformin', 'Advil') "
-                                "or RxNorm CUI (e.g. '6809')."
+                                "Drug name (e.g. 'metformin', 'Advil') or RxNorm CUI (e.g. '6809')."
                             ),
                         },
                     },
@@ -180,16 +179,22 @@ def _build_server() -> Server:
                 payload = json.dumps(result, indent=2)
                 if tr:
                     tr.update(output={"response_bytes": len(payload), "latency_ms": latency_ms})
-                log.info("tool_ok", tool=name, call_id=call_id,
-                         latency_ms=latency_ms, response_bytes=len(payload))
+                log.info(
+                    "tool_ok",
+                    tool=name,
+                    call_id=call_id,
+                    latency_ms=latency_ms,
+                    response_bytes=len(payload),
+                )
                 return [TextContent(type="text", text=payload)]
 
             except Exception as exc:
                 latency_ms = round((time.perf_counter() - t0) * 1000, 1)
                 if tr:
                     tr.update(output={"error": str(exc), "latency_ms": latency_ms})
-                log.error("tool_error", tool=name, call_id=call_id,
-                          latency_ms=latency_ms, error=str(exc))
+                log.error(
+                    "tool_error", tool=name, call_id=call_id, latency_ms=latency_ms, error=str(exc)
+                )
                 return [TextContent(type="text", text=f"Error: {exc}")]
 
     return server
@@ -197,6 +202,7 @@ def _build_server() -> Server:
 
 async def _run_stdio(server: Server) -> None:
     from mcp.server.lowlevel.server import NotificationOptions
+
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
@@ -227,9 +233,7 @@ async def _run_sse(server: Server) -> None:
     sse = SseServerTransport("/messages/")
 
     async def handle_sse(request):  # type: ignore[no-untyped-def]
-        async with sse.connect_sse(
-            request.scope, request.receive, request._send
-        ) as streams:
+        async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
             await server.run(
                 streams[0],
                 streams[1],
@@ -260,10 +264,12 @@ async def _run_sse(server: Server) -> None:
 
 def main() -> None:
     configure_logging(level=settings.log_level, fmt=settings.log_format)
-    log.info("mcp_clinical_reasoner_starting",
-             transport=settings.mcp_transport,
-             version="1.0.0",
-             session_id=_SESSION_ID)
+    log.info(
+        "mcp_clinical_reasoner_starting",
+        transport=settings.mcp_transport,
+        version="1.0.0",
+        session_id=_SESSION_ID,
+    )
     server = _build_server()
     if settings.mcp_transport == "sse":
         anyio.run(_run_sse, server)
@@ -273,4 +279,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

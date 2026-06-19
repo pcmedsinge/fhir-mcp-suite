@@ -70,8 +70,9 @@ async def search_codes(
 
     valueset_url = SYSTEM_VALUESET.get(system_url)
     if not valueset_url:
-        supported = [k for k, v in {a: resolve_system(a) for a in
-                     ["loinc", "snomed", "rxnorm"]} .items()]
+        supported = [
+            k for k, v in {a: resolve_system(a) for a in ["loinc", "snomed", "rxnorm"]}.items()
+        ]
         raise ValueError(
             f"Free-text search is not supported for system {system_url!r} "
             f"on tx.fhir.org. Supported systems: {', '.join(supported)}. "

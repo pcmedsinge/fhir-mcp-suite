@@ -61,7 +61,7 @@ async def demo_search() -> str | None:
         if res.get("name"):
             n = res["name"][0]
             name_parts = n.get("given", []) + [n.get("family", "")]
-        print(f"    [{i+1}] id={res.get('id')}  name={' '.join(name_parts).strip() or 'n/a'}")
+        print(f"    [{i + 1}] id={res.get('id')}  name={' '.join(name_parts).strip() or 'n/a'}")
         if i == 0:
             patient_id = res.get("id")
     next_url = bundle.get("_next_url")
@@ -82,7 +82,9 @@ async def demo_search_next(patient_id: str | None) -> None:
         print(f"  Page 2 entries: {len(page2.get('entry', []))}")
     else:
         total = bundle.get("total", 0)
-        print(f"  Only 1 page of Observations for this patient (total={total}) — no next link needed")
+        print(
+            f"  Only 1 page of Observations for this patient (total={total}) — no next link needed"
+        )
 
 
 async def demo_read(patient_id: str | None) -> dict[str, Any] | None:
@@ -116,6 +118,7 @@ async def demo_validate(resource: dict[str, Any] | None) -> None:
     if not hapi_url or hapi_url == "http://localhost:8080":
         # Quick reachability check
         import httpx
+
         try:
             r = httpx.get(f"{hapi_url or 'http://localhost:8082'}/fhir/metadata", timeout=3)
             r.raise_for_status()

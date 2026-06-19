@@ -36,8 +36,7 @@ def resolve_system(system: str) -> str:
     if not _HTTP_RE.match(resolved):
         known = ", ".join(sorted(SYSTEM_ALIASES))
         raise ValueError(
-            f"system {s!r} is not a known alias or absolute HTTP(S) URI. "
-            f"Known aliases: {known}"
+            f"system {s!r} is not a known alias or absolute HTTP(S) URI. Known aliases: {known}"
         )
     return resolved
 

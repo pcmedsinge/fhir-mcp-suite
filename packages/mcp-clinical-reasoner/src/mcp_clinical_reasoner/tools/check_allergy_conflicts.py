@@ -73,13 +73,15 @@ async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict[str, 
 
         # 1. Direct name match: allergen IS the target drug
         if allergen_lower in (drug_lower, canonical):
-            conflicts.append({
-                "allergen": allergen,
-                "conflict_type": "direct_match",
-                "target_class": None,
-                "allergen_class": None,
-                "notes": f"Patient is allergic to {allergen!r}, which is the same drug as {drug!r}.",
-            })
+            conflicts.append(
+                {
+                    "allergen": allergen,
+                    "conflict_type": "direct_match",
+                    "target_class": None,
+                    "allergen_class": None,
+                    "notes": f"Patient is allergic to {allergen!r}, which is the same drug as {drug!r}.",
+                }
+            )
             found_conflict = True
 
         if found_conflict:
@@ -87,17 +89,20 @@ async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict[str, 
 
         # 2. Allergen is a class name, and target drug is in that class
         if allergen_lower in ALLERGEN_CLASSES and (
-            canonical in ALLERGEN_CLASSES[allergen_lower] or drug_lower in ALLERGEN_CLASSES[allergen_lower]
+            canonical in ALLERGEN_CLASSES[allergen_lower]
+            or drug_lower in ALLERGEN_CLASSES[allergen_lower]
         ):
-                note = _CROSS_REACTIVITY_NOTES.get((allergen_lower, allergen_lower), "")
-                conflicts.append({
+            note = _CROSS_REACTIVITY_NOTES.get((allergen_lower, allergen_lower), "")
+            conflicts.append(
+                {
                     "allergen": allergen,
                     "conflict_type": "class_membership",
                     "target_class": allergen_lower,
                     "allergen_class": allergen_lower,
                     "notes": note or f"{drug!r} is a member of the {allergen!r} drug class.",
-                })
-                found_conflict = True
+                }
+            )
+            found_conflict = True
 
         if found_conflict:
             continue
@@ -110,17 +115,19 @@ async def check_allergy_conflicts(drug: str, allergies: list[str]) -> dict[str, 
                     (allergen_cls, allergen_cls),
                     _CROSS_REACTIVITY_NOTES.get((allergen_cls, allergen_lower), ""),
                 )
-                conflicts.append({
-                    "allergen": allergen,
-                    "conflict_type": "cross_reactivity",
-                    "target_class": allergen_cls,
-                    "allergen_class": allergen_cls,
-                    "notes": (
-                        note
-                        or f"Both {drug!r} and the known allergen {allergen!r} "
-                        f"belong to the '{allergen_cls}' drug class."
-                    ),
-                })
+                conflicts.append(
+                    {
+                        "allergen": allergen,
+                        "conflict_type": "cross_reactivity",
+                        "target_class": allergen_cls,
+                        "allergen_class": allergen_cls,
+                        "notes": (
+                            note
+                            or f"Both {drug!r} and the known allergen {allergen!r} "
+                            f"belong to the '{allergen_cls}' drug class."
+                        ),
+                    }
+                )
                 break  # report once per allergen
 
     return {

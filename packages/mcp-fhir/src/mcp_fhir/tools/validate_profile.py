@@ -30,9 +30,7 @@ def _resolve_profile(profile: str) -> str:
     resolved = PROFILE_ALIASES.get(profile.lower(), profile)
     # Reject obviously non-URL values that aren't known aliases
     if not resolved.startswith(("http://", "https://")):
-        raise ValueError(
-            f"profile must be a URL or one of: {', '.join(PROFILE_ALIASES)}"
-        )
+        raise ValueError(f"profile must be a URL or one of: {', '.join(PROFILE_ALIASES)}")
     return resolved
 
 

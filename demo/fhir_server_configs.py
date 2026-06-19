@@ -32,9 +32,9 @@ PUBLIC_HAPI = StdioServerParameters(
     args=["run", "--package", "mcp-fhir", "mcp-fhir"],
     env={
         **os.environ,
-        "FHIR_BASE_URL":  "https://hapi.fhir.org/baseR4",
-        "SMART_ENABLED":  "false",
-        "LOG_FORMAT":     "console",
+        "FHIR_BASE_URL": "https://hapi.fhir.org/baseR4",
+        "SMART_ENABLED": "false",
+        "LOG_FORMAT": "console",
     },
 )
 
@@ -45,9 +45,9 @@ SMART_HEALTH_IT = StdioServerParameters(
     args=["run", "--package", "mcp-fhir", "mcp-fhir"],
     env={
         **os.environ,
-        "FHIR_BASE_URL":  "https://r4.smarthealthit.org",
-        "SMART_ENABLED":  "false",
-        "LOG_FORMAT":     "console",
+        "FHIR_BASE_URL": "https://r4.smarthealthit.org",
+        "SMART_ENABLED": "false",
+        "LOG_FORMAT": "console",
     },
 )
 
@@ -68,15 +68,15 @@ EPIC_SANDBOX = StdioServerParameters(
     args=["run", "--package", "mcp-fhir", "mcp-fhir"],
     env={
         **os.environ,
-        "FHIR_BASE_URL":        "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
-        "SMART_ENABLED":        "true",
-        "SMART_CLIENT_ID":      os.environ.get("EPIC_CLIENT_ID", "YOUR_EPIC_CLIENT_ID"),
-        "SMART_CLIENT_SECRET":  os.environ.get("EPIC_CLIENT_SECRET", "YOUR_EPIC_CLIENT_SECRET"),
+        "FHIR_BASE_URL": "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4",
+        "SMART_ENABLED": "true",
+        "SMART_CLIENT_ID": os.environ.get("EPIC_CLIENT_ID", "YOUR_EPIC_CLIENT_ID"),
+        "SMART_CLIENT_SECRET": os.environ.get("EPIC_CLIENT_SECRET", "YOUR_EPIC_CLIENT_SECRET"),
         # Leave SMART_TOKEN_URL blank → auto-discovered from /.well-known/smart-configuration
-        "SMART_TOKEN_URL":      os.environ.get("EPIC_TOKEN_URL", ""),
-        "SMART_SCOPES":         "system/Patient.read system/Observation.read system/Condition.read",
-        "SMART_GRANT_TYPE":     "client_credentials",
-        "LOG_FORMAT":           "console",
+        "SMART_TOKEN_URL": os.environ.get("EPIC_TOKEN_URL", ""),
+        "SMART_SCOPES": "system/Patient.read system/Observation.read system/Condition.read",
+        "SMART_GRANT_TYPE": "client_credentials",
+        "LOG_FORMAT": "console",
     },
 )
 
@@ -94,17 +94,18 @@ CERNER_SANDBOX = StdioServerParameters(
     env={
         **os.environ,
         # Replace <account-id> with your Cerner account ID (e.g. "ec2458f2-1e24-41c8-b71b-0e701af7583d")
-        "FHIR_BASE_URL":        f"https://fhir-myrecord.cerner.com/r4/{os.environ.get('CERNER_ACCOUNT_ID', 'YOUR_ACCOUNT_ID')}",
-        "SMART_ENABLED":        "true",
-        "SMART_CLIENT_ID":      os.environ.get("CERNER_CLIENT_ID", "YOUR_CERNER_CLIENT_ID"),
-        "SMART_CLIENT_SECRET":  os.environ.get("CERNER_CLIENT_SECRET", "YOUR_CERNER_CLIENT_SECRET"),
+        "FHIR_BASE_URL": f"https://fhir-myrecord.cerner.com/r4/{os.environ.get('CERNER_ACCOUNT_ID', 'YOUR_ACCOUNT_ID')}",
+        "SMART_ENABLED": "true",
+        "SMART_CLIENT_ID": os.environ.get("CERNER_CLIENT_ID", "YOUR_CERNER_CLIENT_ID"),
+        "SMART_CLIENT_SECRET": os.environ.get("CERNER_CLIENT_SECRET", "YOUR_CERNER_CLIENT_SECRET"),
         # Cerner requires explicit token URL (no auto-discovery for system apps)
-        "SMART_TOKEN_URL":      "https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/token",
-        "SMART_SCOPES":         "system/Patient.read system/Observation.read",
-        "SMART_GRANT_TYPE":     "client_credentials",
-        "LOG_FORMAT":           "console",
+        "SMART_TOKEN_URL": "https://authorization.cerner.com/tenants/ec2458f2-1e24-41c8-b71b-0e701af7583d/protocols/oauth2/profiles/smart-v1/token",
+        "SMART_SCOPES": "system/Patient.read system/Observation.read",
+        "SMART_GRANT_TYPE": "client_credentials",
+        "LOG_FORMAT": "console",
     },
 )
+
 
 # ── 5. Any generic FHIR + SMART server ──────────────────────────────────────
 # Template — copy and fill in your own values.
@@ -113,7 +114,7 @@ def make_generic(
     fhir_base_url: str,
     client_id: str,
     client_secret: str,
-    token_url: str = "",        # empty = auto-discover
+    token_url: str = "",  # empty = auto-discover
     scopes: str = "system/*.read",
     grant_type: str = "client_credentials",
 ) -> StdioServerParameters:
@@ -122,16 +123,17 @@ def make_generic(
         args=["run", "--package", "mcp-fhir", "mcp-fhir"],
         env={
             **os.environ,
-            "FHIR_BASE_URL":        fhir_base_url,
-            "SMART_ENABLED":        "true",
-            "SMART_CLIENT_ID":      client_id,
-            "SMART_CLIENT_SECRET":  client_secret,
-            "SMART_TOKEN_URL":      token_url,
-            "SMART_SCOPES":         scopes,
-            "SMART_GRANT_TYPE":     grant_type,
-            "LOG_FORMAT":           "console",
+            "FHIR_BASE_URL": fhir_base_url,
+            "SMART_ENABLED": "true",
+            "SMART_CLIENT_ID": client_id,
+            "SMART_CLIENT_SECRET": client_secret,
+            "SMART_TOKEN_URL": token_url,
+            "SMART_SCOPES": scopes,
+            "SMART_GRANT_TYPE": grant_type,
+            "LOG_FORMAT": "console",
         },
     )
+
 
 # ── 6. Local Docker Compose full stack ──────────────────────────────────────
 # Start with: docker compose up hapi-fhir hapi-validator -d
@@ -141,15 +143,16 @@ LOCAL_DOCKER = StdioServerParameters(
     args=["run", "--package", "mcp-fhir", "mcp-fhir"],
     env={
         **os.environ,
-        "FHIR_BASE_URL":       "http://localhost:8081/fhir",
-        "HAPI_VALIDATOR_URL":  "http://localhost:8082",
-        "SMART_ENABLED":       "false",
-        "LOG_FORMAT":          "console",
+        "FHIR_BASE_URL": "http://localhost:8081/fhir",
+        "HAPI_VALIDATOR_URL": "http://localhost:8082",
+        "SMART_ENABLED": "false",
+        "LOG_FORMAT": "console",
     },
 )
 
 
 # ── Helper: connect and run a quick sanity check ────────────────────────────
+
 
 async def make_session(params: StdioServerParameters) -> None:
     """Connect to the server, print its capabilities, and run one search."""
@@ -166,6 +169,7 @@ async def make_session(params: StdioServerParameters) -> None:
             # Capabilities
             cap_result = await session.call_tool("fhir_capabilities", arguments={})
             import json
+
             caps = json.loads(cap_result.content[0].text)
             print(f"\nFHIR server  : {caps.get('fhir_version', '?')}")
             print(f"Publisher    : {caps.get('publisher', 'n/a')}")
@@ -185,11 +189,11 @@ async def make_session(params: StdioServerParameters) -> None:
 
 
 CONFIGS: dict[str, StdioServerParameters] = {
-    "hapi":          PUBLIC_HAPI,
-    "smart-health":  SMART_HEALTH_IT,
-    "epic":          EPIC_SANDBOX,
-    "cerner":        CERNER_SANDBOX,
-    "local":         LOCAL_DOCKER,
+    "hapi": PUBLIC_HAPI,
+    "smart-health": SMART_HEALTH_IT,
+    "epic": EPIC_SANDBOX,
+    "cerner": CERNER_SANDBOX,
+    "local": LOCAL_DOCKER,
 }
 
 

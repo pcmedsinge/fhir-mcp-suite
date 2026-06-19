@@ -50,22 +50,27 @@ log = structlog.get_logger("eval")
 
 # ── Custom invoke adapters (programmatic checks for non-dict assertions) ────
 
+
 async def _invoke(tool: str, input_args: dict[str, Any]) -> dict[str, Any]:
     """Route to the appropriate async tool function."""
     if tool == "fhir_capabilities":
         from mcp_fhir.tools.fhir_capabilities import fhir_capabilities
+
         return await fhir_capabilities()
 
     if tool == "fhir_read":
         from mcp_fhir.tools.fhir_read import fhir_read
+
         return await fhir_read(**input_args)
 
     if tool == "fhir_search":
         from mcp_fhir.tools.fhir_search import fhir_search
+
         return await fhir_search(**input_args)
 
     if tool == "validate_against_profile":
         from mcp_fhir.tools.validate_profile import validate_against_profile
+
         return await validate_against_profile(**input_args)
 
     raise ValueError(f"Unknown tool: {tool!r}")
@@ -85,22 +90,25 @@ def _programmatic_check(case: GoldenCase, result: dict[str, Any]) -> tuple[bool,
         ok = int(count) >= 10
         return ok, f"resource_count={count} (expected >= 10)"
 
-    if cid in ("validate_004_obs_missing_fields_fails_us_core",
-               "validate_007_error_count_field_present"):
+    if cid in (
+        "validate_004_obs_missing_fields_fails_us_core",
+        "validate_007_error_count_field_present",
+    ):
         if cid == "validate_007_error_count_field_present":
             ok = "error_count" in result and "issues" in result
-            return ok, f"keys present: error_count={'error_count' in result}, issues={'issues' in result}"
+            return (
+                ok,
+                f"keys present: error_count={'error_count' in result}, issues={'issues' in result}",
+            )
 
     if cid == "read_002_id_preserved":
         ok = "id" in result
         return ok, f"'id' present: {ok}"
 
-    return True, ""   # no additional programmatic check
+    return True, ""  # no additional programmatic check
 
 
-def _subset_check(
-    expected: dict[str, Any], actual: dict[str, Any]
-) -> tuple[bool, float, str]:
+def _subset_check(expected: dict[str, Any], actual: dict[str, Any]) -> tuple[bool, float, str]:
     """Return (passed, score, notes) — mirrors EvalRunner._check logic."""
     if not expected:
         return True, 1.0, "no dict assertions"
@@ -116,8 +124,7 @@ def _subset_check(
 
 
 async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
-    cases = [GoldenCase.model_validate(c)
-             for c in json.loads(GOLDEN_FILE.read_text())]
+    cases = [GoldenCase.model_validate(c) for c in json.loads(GOLDEN_FILE.read_text())]
 
     results: list[EvalResult] = []
     for case in cases:
@@ -140,8 +147,7 @@ async def run_eval(tags: list[str] | None = None) -> list[EvalResult]:
             elif prog_notes:
                 notes = prog_notes
 
-            er = EvalResult(case_id=case.id, passed=passed, score=score,
-                            actual=result, notes=notes)
+            er = EvalResult(case_id=case.id, passed=passed, score=score, actual=result, notes=notes)
 
         except Exception as exc:
             elapsed = time.perf_counter() - t0
@@ -165,13 +171,13 @@ def _print_summary(results: list[EvalResult]) -> None:
     total = len(results)
     rate = passed / total if total else 0
 
-    print(f"\n{'─'*60}")
+    print(f"\n{'─' * 60}")
     print(f"  mcp-fhir eval — {passed}/{total} passed ({rate:.1%})")
-    print(f"{'─'*60}")
+    print(f"{'─' * 60}")
     for r in results:
         icon = "✓" if r.passed else "✗"
         print(f"  {icon} {r.case_id:<50}  {r.notes[:50] if r.notes else ''}")
-    print(f"{'─'*60}\n")
+    print(f"{'─' * 60}\n")
 
 
 def main() -> None:
@@ -192,9 +198,7 @@ def main() -> None:
 
     if args.output_json:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
-        args.output_json.write_text(
-            json.dumps([r.model_dump() for r in results], indent=2)
-        )
+        args.output_json.write_text(json.dumps([r.model_dump() for r in results], indent=2))
         log.info("results_written", path=str(args.output_json))
 
     if args.ci:

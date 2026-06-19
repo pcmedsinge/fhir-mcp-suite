@@ -3,4 +3,3 @@
 from mcp_clinical_reasoner.server import main as main
 
 __version__ = "1.0.0"
-

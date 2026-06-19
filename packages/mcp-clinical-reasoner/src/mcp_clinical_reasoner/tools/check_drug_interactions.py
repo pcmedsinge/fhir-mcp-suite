@@ -23,34 +23,46 @@ _OPENFDA_BASE = "https://api.fda.gov/drug/label.json"
 # individual drug names, so we check both the drug name and its class aliases.
 _CLASS_ALIASES: dict[str, list[str]] = {
     # ACE inhibitors
-    "lisinopril":   ["lisinopril", "ACE", "ACE-inhibitor", "ACE inhibitor", "angiotensin-converting enzyme"],
-    "enalapril":    ["enalapril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
-    "ramipril":     ["ramipril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
-    "captopril":    ["captopril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
+    "lisinopril": [
+        "lisinopril",
+        "ACE",
+        "ACE-inhibitor",
+        "ACE inhibitor",
+        "angiotensin-converting enzyme",
+    ],
+    "enalapril": ["enalapril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
+    "ramipril": ["ramipril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
+    "captopril": ["captopril", "ACE", "ACE-inhibitor", "angiotensin-converting enzyme"],
     # NSAIDs
-    "ibuprofen":    ["ibuprofen", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory", "nonsteroidal"],
-    "naproxen":     ["naproxen", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory"],
-    "celecoxib":    ["celecoxib", "NSAID", "NSAIDs", "COX-2"],
-    "diclofenac":   ["diclofenac", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory"],
+    "ibuprofen": [
+        "ibuprofen",
+        "NSAID",
+        "NSAIDs",
+        "non-steroidal anti-inflammatory",
+        "nonsteroidal",
+    ],
+    "naproxen": ["naproxen", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory"],
+    "celecoxib": ["celecoxib", "NSAID", "NSAIDs", "COX-2"],
+    "diclofenac": ["diclofenac", "NSAID", "NSAIDs", "non-steroidal anti-inflammatory"],
     "indomethacin": ["indomethacin", "NSAID", "NSAIDs"],
     # Anticoagulants / antiplatelets
-    "warfarin":     ["warfarin", "coumarin", "anticoagulant"],
-    "aspirin":      ["aspirin", "salicylate", "antiplatelet"],
-    "clopidogrel":  ["clopidogrel", "antiplatelet"],
+    "warfarin": ["warfarin", "coumarin", "anticoagulant"],
+    "aspirin": ["aspirin", "salicylate", "antiplatelet"],
+    "clopidogrel": ["clopidogrel", "antiplatelet"],
     # Statins
     "atorvastatin": ["atorvastatin", "statin", "HMG-CoA"],
-    "simvastatin":  ["simvastatin", "statin", "HMG-CoA"],
+    "simvastatin": ["simvastatin", "statin", "HMG-CoA"],
     # Biguanides
-    "metformin":    ["metformin", "biguanide"],
+    "metformin": ["metformin", "biguanide"],
     # ARBs
-    "losartan":     ["losartan", "ARB", "angiotensin II", "angiotensin receptor"],
-    "valsartan":    ["valsartan", "ARB", "angiotensin II", "angiotensin receptor"],
+    "losartan": ["losartan", "ARB", "angiotensin II", "angiotensin receptor"],
+    "valsartan": ["valsartan", "ARB", "angiotensin II", "angiotensin receptor"],
     # SSRIs
-    "fluoxetine":   ["fluoxetine", "SSRI", "serotonin reuptake"],
-    "sertraline":   ["sertraline", "SSRI", "serotonin reuptake"],
+    "fluoxetine": ["fluoxetine", "SSRI", "serotonin reuptake"],
+    "sertraline": ["sertraline", "SSRI", "serotonin reuptake"],
     # Opioids
-    "morphine":     ["morphine", "opioid"],
-    "oxycodone":    ["oxycodone", "opioid"],
+    "morphine": ["morphine", "opioid"],
+    "oxycodone": ["oxycodone", "opioid"],
 }
 
 
@@ -92,19 +104,24 @@ async def check_drug_interactions(drug_names: list[str]) -> dict[str, Any]:
             for other_drug in drug_names:
                 if other_drug == primary_drug:
                     continue
-                pair_key: tuple[str, str] = (min(primary_drug.lower(), other_drug.lower()), max(primary_drug.lower(), other_drug.lower()))
+                pair_key: tuple[str, str] = (
+                    min(primary_drug.lower(), other_drug.lower()),
+                    max(primary_drug.lower(), other_drug.lower()),
+                )
                 if pair_key in seen_pairs:
                     continue
                 excerpt = _find_mention(label_text, other_drug)
                 if excerpt:
                     seen_pairs.add(pair_key)
-                    interactions.append({
-                        "drug_a": primary_drug,
-                        "drug_b": other_drug,
-                        "brand_name": brand or primary_drug,
-                        "interaction_text": excerpt,
-                        "source_label": "FDA approved labeling",
-                    })
+                    interactions.append(
+                        {
+                            "drug_a": primary_drug,
+                            "drug_b": other_drug,
+                            "brand_name": brand or primary_drug,
+                            "interaction_text": excerpt,
+                            "source_label": "FDA approved labeling",
+                        }
+                    )
 
     return {
         "drugs": drug_names,
@@ -155,4 +172,3 @@ def _find_mention(label_text: str, other_drug: str) -> str | None:
             end = min(len(label_text), m.end() + 300)
             return label_text[start:end].strip()
     return None
-

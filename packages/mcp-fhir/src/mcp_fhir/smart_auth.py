@@ -103,8 +103,9 @@ async def _acquire_client_credentials(
         "grant_type": "client_credentials",
         "scope": scopes,
     }
-    log.info("smart_token_request", grant="client_credentials",
-             token_url=token_url, client_id=client_id)
+    log.info(
+        "smart_token_request", grant="client_credentials", token_url=token_url, client_id=client_id
+    )
     try:
         async with httpx.AsyncClient(timeout=timeout_s) as client:
             response = await client.post(
@@ -120,21 +121,16 @@ async def _acquire_client_credentials(
             f"SMART token request failed: HTTP {exc.response.status_code} — {body}"
         ) from exc
     except httpx.RequestError as exc:
-        raise SmartAuthError(
-            f"SMART token request network error: {exc}"
-        ) from exc
+        raise SmartAuthError(f"SMART token request network error: {exc}") from exc
 
     payload: dict[str, Any] = response.json()
     access_token = payload.get("access_token", "")
     if not access_token:
-        raise SmartAuthError(
-            f"SMART token response missing access_token. Got: {list(payload)}"
-        )
+        raise SmartAuthError(f"SMART token response missing access_token. Got: {list(payload)}")
     expires_in = float(payload.get("expires_in", 300))
     expires_at = time.monotonic() + expires_in - _EXPIRY_BUFFER_S
 
-    log.info("smart_token_acquired",
-             expires_in=expires_in, token_type=payload.get("token_type"))
+    log.info("smart_token_acquired", expires_in=expires_in, token_type=payload.get("token_type"))
     return _CachedToken(access_token=access_token, expires_at=expires_at)
 
 

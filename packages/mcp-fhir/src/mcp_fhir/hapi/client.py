@@ -135,7 +135,11 @@ async def validate_resource(
             response.raise_for_status()
             data = response.json()
     except (httpx.ConnectError, httpx.ReadTimeout, httpx.TimeoutException) as exc:
-        err_type = "timeout" if isinstance(exc, (httpx.ReadTimeout, httpx.TimeoutException)) else "connection-error"
+        err_type = (
+            "timeout"
+            if isinstance(exc, (httpx.ReadTimeout, httpx.TimeoutException))
+            else "connection-error"
+        )
         log.warning("hapi_validator_unreachable", url=url, error=str(exc))
         return ValidationReport(
             profile=profile,

@@ -79,16 +79,12 @@ class EvalRunner:
                 passed, score, notes = False, 0.0, f"exception: {exc}"
                 actual = {}
             results.append(
-                EvalResult(
-                    case_id=case.id, passed=passed, score=score, actual=actual, notes=notes
-                )
+                EvalResult(case_id=case.id, passed=passed, score=score, actual=actual, notes=notes)
             )
             log.info("eval_case_done", case_id=case.id, passed=passed, score=score)
         return results
 
-    def _check(
-        self, expected: dict[str, Any], actual: dict[str, Any]
-    ) -> tuple[bool, float, str]:
+    def _check(self, expected: dict[str, Any], actual: dict[str, Any]) -> tuple[bool, float, str]:
         """Check that all expected keys/values appear in actual (subset match).
 
         Returns (passed, score, notes).

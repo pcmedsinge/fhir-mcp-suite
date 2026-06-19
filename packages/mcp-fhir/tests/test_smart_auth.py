@@ -10,10 +10,12 @@ import respx
 
 # ── smart_auth unit tests ─────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_acquire_token_success() -> None:
     """client_credentials grant returns and caches an access token."""
     from mcp_fhir.smart_auth import clear_token_cache, get_access_token
+
     clear_token_cache()
 
     with respx.mock:
@@ -36,10 +38,12 @@ async def test_acquire_token_success() -> None:
 async def test_acquire_token_cached() -> None:
     """Second call reuses cached token without hitting the network."""
     from mcp_fhir.smart_auth import clear_token_cache, get_access_token
+
     clear_token_cache()
 
     call_count = 0
     with respx.mock:
+
         def handler(request: httpx.Request) -> httpx.Response:
             nonlocal call_count
             call_count += 1
@@ -47,15 +51,18 @@ async def test_acquire_token_cached() -> None:
                 200,
                 json={"access_token": "tok-xyz", "expires_in": 600, "token_type": "Bearer"},
             )
+
         respx.post("https://auth.example.com/token").mock(side_effect=handler)
 
         await get_access_token(
             token_url="https://auth.example.com/token",
-            client_id="c1", client_secret="s1",
+            client_id="c1",
+            client_secret="s1",
         )
         await get_access_token(
             token_url="https://auth.example.com/token",
-            client_id="c1", client_secret="s1",
+            client_id="c1",
+            client_secret="s1",
         )
 
     assert call_count == 1, "Token should have been served from cache on second call"
@@ -66,6 +73,7 @@ async def test_acquire_token_refreshes_on_expiry() -> None:
     """Expired token triggers a new token request."""
     from mcp_fhir import smart_auth
     from mcp_fhir.smart_auth import _CachedToken, clear_token_cache
+
     clear_token_cache()
 
     # Pre-populate cache with an already-expired token
@@ -84,7 +92,8 @@ async def test_acquire_token_refreshes_on_expiry() -> None:
         )
         token = await smart_auth.get_access_token(
             token_url="https://auth.example.com/token",
-            client_id="c2", client_secret="s2",
+            client_id="c2",
+            client_secret="s2",
         )
 
     assert token == "new-token"
@@ -94,6 +103,7 @@ async def test_acquire_token_refreshes_on_expiry() -> None:
 async def test_acquire_token_http_error() -> None:
     """HTTP 401 from token endpoint raises SmartAuthError."""
     from mcp_fhir.smart_auth import SmartAuthError, clear_token_cache, get_access_token
+
     clear_token_cache()
 
     with respx.mock:
@@ -103,7 +113,8 @@ async def test_acquire_token_http_error() -> None:
         with pytest.raises(SmartAuthError, match="401"):
             await get_access_token(
                 token_url="https://auth.example.com/token",
-                client_id="bad", client_secret="bad",
+                client_id="bad",
+                client_secret="bad",
             )
 
 
@@ -111,6 +122,7 @@ async def test_acquire_token_http_error() -> None:
 async def test_acquire_token_missing_access_token() -> None:
     """Response missing access_token field raises SmartAuthError."""
     from mcp_fhir.smart_auth import SmartAuthError, clear_token_cache, get_access_token
+
     clear_token_cache()
 
     with respx.mock:
@@ -120,7 +132,8 @@ async def test_acquire_token_missing_access_token() -> None:
         with pytest.raises(SmartAuthError, match="missing access_token"):
             await get_access_token(
                 token_url="https://auth.example.com/token",
-                client_id="c3", client_secret="s3",
+                client_id="c3",
+                client_secret="s3",
             )
 
 
@@ -157,6 +170,7 @@ async def test_discover_token_url_fallback() -> None:
 
 # ── http_client unit tests ────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_get_fhir_headers_no_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     """With SMART disabled, headers only contain Accept."""
@@ -164,8 +178,10 @@ async def test_get_fhir_headers_no_auth(monkeypatch: pytest.MonkeyPatch) -> None
     from importlib import reload
 
     import mcp_fhir.settings as s_mod
+
     reload(s_mod)
     import mcp_fhir.http_client as hc_mod
+
     reload(hc_mod)
 
     headers = await hc_mod.get_fhir_headers()
@@ -177,6 +193,7 @@ async def test_get_fhir_headers_no_auth(monkeypatch: pytest.MonkeyPatch) -> None
 async def test_get_fhir_headers_with_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     """With SMART enabled, Bearer token appears in headers."""
     from mcp_fhir.smart_auth import clear_token_cache
+
     clear_token_cache()
 
     monkeypatch.setenv("SMART_ENABLED", "true")
@@ -187,8 +204,10 @@ async def test_get_fhir_headers_with_auth(monkeypatch: pytest.MonkeyPatch) -> No
     from importlib import reload
 
     import mcp_fhir.settings as s_mod
+
     reload(s_mod)
     import mcp_fhir.http_client as hc_mod
+
     reload(hc_mod)
     hc_mod.reset_discovery_cache()
 
@@ -196,7 +215,11 @@ async def test_get_fhir_headers_with_auth(monkeypatch: pytest.MonkeyPatch) -> No
         respx.post("https://auth.example.com/token").mock(
             return_value=httpx.Response(
                 200,
-                json={"access_token": "bearer-token-789", "expires_in": 300, "token_type": "Bearer"},
+                json={
+                    "access_token": "bearer-token-789",
+                    "expires_in": 300,
+                    "token_type": "Bearer",
+                },
             )
         )
         headers = await hc_mod.get_fhir_headers()

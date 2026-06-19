@@ -186,6 +186,7 @@ def _build_server() -> Server:
                     _res = arguments["resource"]
                     if isinstance(_res, str):
                         import json as _json
+
                         _res = _json.loads(_res)
                     result = await validate_against_profile(
                         resource=_res,
@@ -200,9 +201,7 @@ def _build_server() -> Server:
                 latency_ms = round((time.perf_counter() - t0) * 1000, 1)
                 payload = json.dumps(result, indent=2)
                 if tr:
-                    tr.update(
-                        output={"response_bytes": len(payload), "latency_ms": latency_ms}
-                    )
+                    tr.update(output={"response_bytes": len(payload), "latency_ms": latency_ms})
                 log.info(
                     "tool_ok",
                     tool=name,
@@ -216,8 +215,9 @@ def _build_server() -> Server:
                 latency_ms = round((time.perf_counter() - t0) * 1000, 1)
                 if tr:
                     tr.update(output={"error": str(exc), "latency_ms": latency_ms})
-                log.error("tool_error", tool=name, call_id=call_id,
-                          latency_ms=latency_ms, error=str(exc))
+                log.error(
+                    "tool_error", tool=name, call_id=call_id, latency_ms=latency_ms, error=str(exc)
+                )
                 return [TextContent(type="text", text=f"Error: {exc}")]
 
     return server
@@ -255,9 +255,7 @@ async def _run_sse(server: Server) -> None:
     sse = SseServerTransport("/messages/")
 
     async def handle_sse(request):  # type: ignore[no-untyped-def]
-        async with sse.connect_sse(
-            request.scope, request.receive, request._send
-        ) as streams:
+        async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
             await server.run(
                 streams[0],
                 streams[1],
@@ -291,7 +289,12 @@ async def _run_sse(server: Server) -> None:
 def main() -> None:
     """Entry point for ``mcp-fhir`` CLI."""
     configure_logging(level=settings.log_level, fmt=settings.log_format)
-    log.info("mcp_fhir_starting", transport=settings.mcp_transport, version="1.0.0", session_id=_SESSION_ID)
+    log.info(
+        "mcp_fhir_starting",
+        transport=settings.mcp_transport,
+        version="1.0.0",
+        session_id=_SESSION_ID,
+    )
     server = _build_server()
 
     if settings.mcp_transport == "sse":

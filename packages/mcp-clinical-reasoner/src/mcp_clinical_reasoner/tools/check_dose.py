@@ -16,11 +16,26 @@ log = structlog.get_logger(__name__)
 
 # Approximate times-per-day mapping for common frequency strings.
 _FREQUENCY_MAP: dict[str, float] = {
-    "qd": 1.0, "daily": 1.0, "once": 1.0, "once daily": 1.0, "od": 1.0,
-    "bid": 2.0, "twice daily": 2.0, "q12h": 2.0, "q12": 2.0,
-    "tid": 3.0, "three times daily": 3.0, "q8h": 3.0, "q8": 3.0,
-    "qid": 4.0, "four times daily": 4.0, "q6h": 4.0, "q6": 4.0,
-    "q4h": 6.0, "q4": 6.0, "six times daily": 6.0,
+    "qd": 1.0,
+    "daily": 1.0,
+    "once": 1.0,
+    "once daily": 1.0,
+    "od": 1.0,
+    "bid": 2.0,
+    "twice daily": 2.0,
+    "q12h": 2.0,
+    "q12": 2.0,
+    "tid": 3.0,
+    "three times daily": 3.0,
+    "q8h": 3.0,
+    "q8": 3.0,
+    "qid": 4.0,
+    "four times daily": 4.0,
+    "q6h": 4.0,
+    "q6": 4.0,
+    "q4h": 6.0,
+    "q4": 6.0,
+    "six times daily": 6.0,
     "prn": 4.0,  # assume max 4x/day for PRN without other context
 }
 
