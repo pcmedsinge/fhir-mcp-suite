@@ -76,4 +76,5 @@ async def validate_against_profile(
         error_count=report.error_count,
         warning_count=report.warning_count,
     )
-    return report.model_dump()
+    result: dict[str, Any] = report.model_dump()
+    return result
