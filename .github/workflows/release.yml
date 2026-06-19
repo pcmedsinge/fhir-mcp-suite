@@ -64,7 +64,7 @@ jobs:
           fi
 
       - name: Install build deps
-        run: uv pip install build hatchling
+        run: pip install build hatchling
 
       - name: Build wheel + sdist
         run: |
