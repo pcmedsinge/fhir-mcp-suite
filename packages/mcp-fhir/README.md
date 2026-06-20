@@ -30,7 +30,7 @@ Claude Desktop / AI client
         │  MCP (stdio or SSE)
         ▼
 ┌───────────────────────────────┐
-│        mcp-fhir  v1.0         │
+│        mcp-fhir  v1.1         │
 │  ┌───────────────────────────┐│
 │  │  tools/                   ││
 │  │  ├─ fhir_capabilities.py  ││

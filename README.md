@@ -4,6 +4,8 @@
 
 [![CI](https://github.com/pcmedsinge/fhir-mcp-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/pcmedsinge/fhir-mcp-suite/actions/workflows/ci.yml)
 [![mcp-fhir PyPI](https://img.shields.io/pypi/v/mcp-fhir?label=mcp-fhir)](https://pypi.org/project/mcp-fhir/)
+[![mcp-terminology PyPI](https://img.shields.io/pypi/v/mcp-terminology?label=mcp-terminology)](https://pypi.org/project/mcp-terminology/)
+[![mcp-clinical-reasoner PyPI](https://img.shields.io/pypi/v/mcp-clinical-reasoner?label=mcp-clinical-reasoner)](https://pypi.org/project/mcp-clinical-reasoner/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 
@@ -11,9 +13,9 @@
 
 | Server | Status | Install | What it does |
 |--------|--------|---------|-------------|
-| **mcp-fhir** | ✅ v0.1 | `uvx mcp-fhir` | FHIR R4 read/search + **HAPI profile validation** |
-| **mcp-terminology** | ✅ v1.0 | `uvx mcp-terminology` | Unified LOINC / SNOMED / RxNorm / ICD-10 lookup + ValueSet expansion |
-| **mcp-clinical-reasoner** | ✅ v1.0 | `uvx mcp-clinical-reasoner` | Drug interactions (OpenFDA), dose check, allergy conflicts |
+| **mcp-fhir** | ✅ v1.1 on PyPI | `uvx mcp-fhir` | FHIR R4 read/search + **HAPI profile validation** |
+| **mcp-terminology** | ✅ v1.0 on PyPI | `uvx mcp-terminology` | Unified LOINC / SNOMED / RxNorm / ICD-10 lookup + ValueSet expansion |
+| **mcp-clinical-reasoner** | ✅ v1.0 on PyPI | `uvx mcp-clinical-reasoner` | Drug interactions (OpenFDA), dose check, allergy conflicts |
 
 ## Why this suite is different
 
@@ -79,7 +81,7 @@ HAPI_VALIDATOR_URL=http://localhost:8082 \
 ```
 fhir-mcp-suite/
 ├── packages/
-│   ├── mcp-fhir/              # PyPI: mcp-fhir          ← active
+│   ├── mcp-fhir/              # PyPI: mcp-fhir          ✅ v1.1
 │   ├── mcp-terminology/       # PyPI: mcp-terminology   ✅ v1.0
 │   └── mcp-clinical-reasoner/ # PyPI: mcp-clinical-reasoner ✅ v1.0
 ├── shared/                    # structlog, LangFuse, base Pydantic models, eval harness
@@ -95,9 +97,9 @@ fhir-mcp-suite/
 
 | Package | Version | Released |
 |---------|---------|----------|
-| `mcp-fhir` | v1.0 | May 2026 |
-| `mcp-terminology` | v1.0 | May 2026 |
-| `mcp-clinical-reasoner` | v1.0 | May 2026 |
+| `mcp-fhir` | v1.1 | June 2026 |
+| `mcp-terminology` | v1.0 | June 2026 |
+| `mcp-clinical-reasoner` | v1.0 | June 2026 |
 
 ## Contributing
 
