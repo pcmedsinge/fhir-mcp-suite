@@ -1,5 +1,7 @@
 # mcp-clinical-reasoner
 
+<!-- mcp-name: io.github.pcmedsinge/mcp-clinical-reasoner -->
+
 > **Part of [fhir-mcp-suite](https://github.com/pcmedsinge/fhir-mcp-suite)** — v1.0.0
 
 An MCP server providing four clinical pharmacology tools backed by the free

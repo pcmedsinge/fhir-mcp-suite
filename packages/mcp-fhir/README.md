@@ -1,5 +1,7 @@
 # mcp-fhir
 
+<!-- mcp-name: io.github.pcmedsinge/mcp-fhir -->
+
 > FHIR R4 MCP server — read, search, paginate, validate resources against US Core/IPS profiles,
 > and authenticate against Epic/Cerner EHR sandboxes via SMART-on-FHIR OAuth 2.0.  
 > Part of the [fhir-mcp-suite](https://github.com/pcmedsinge/fhir-mcp-suite) monorepo.

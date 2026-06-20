@@ -1,5 +1,7 @@
 # mcp-terminology
 
+<!-- mcp-name: io.github.pcmedsinge/mcp-terminology -->
+
 > Unified LOINC / SNOMED CT / RxNorm / ICD-10 MCP server — v1.0.0
 > Part of the [fhir-mcp-suite](https://github.com/pcmedsinge/fhir-mcp-suite) monorepo.
 
