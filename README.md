@@ -6,6 +6,7 @@
 [![mcp-fhir PyPI](https://img.shields.io/pypi/v/mcp-fhir?label=mcp-fhir)](https://pypi.org/project/mcp-fhir/)
 [![mcp-terminology PyPI](https://img.shields.io/pypi/v/mcp-terminology?label=mcp-terminology)](https://pypi.org/project/mcp-terminology/)
 [![mcp-clinical-reasoner PyPI](https://img.shields.io/pypi/v/mcp-clinical-reasoner?label=mcp-clinical-reasoner)](https://pypi.org/project/mcp-clinical-reasoner/)
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-listed-blue)](https://registry.modelcontextprotocol.io/?search=io.github.pcmedsinge)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 
@@ -42,7 +43,8 @@ uvx mcp-fhir --transport sse  # or set MCP_TRANSPORT=sse
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`  
+(Windows: `%APPDATA%\Claude\claude_desktop_config.json`):
 
 ```json
 {
@@ -53,6 +55,14 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "env": {
         "FHIR_BASE_URL": "https://hapi.fhir.org/baseR4"
       }
+    },
+    "terminology": {
+      "command": "uvx",
+      "args": ["mcp-terminology"]
+    },
+    "clinical-reasoner": {
+      "command": "uvx",
+      "args": ["mcp-clinical-reasoner"]
     }
   }
 }
