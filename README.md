@@ -7,6 +7,7 @@
 [![mcp-terminology PyPI](https://img.shields.io/pypi/v/mcp-terminology?label=mcp-terminology)](https://pypi.org/project/mcp-terminology/)
 [![mcp-clinical-reasoner PyPI](https://img.shields.io/pypi/v/mcp-clinical-reasoner?label=mcp-clinical-reasoner)](https://pypi.org/project/mcp-clinical-reasoner/)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-listed-blue)](https://registry.modelcontextprotocol.io/?search=io.github.pcmedsinge)
+[![Glama](https://img.shields.io/badge/Glama-listed-orange)](https://glama.ai/mcp/servers/pcmedsinge/fhir-mcp-suite)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 
@@ -14,13 +15,13 @@
 
 | Server | Status | Install | What it does |
 |--------|--------|---------|-------------|
-| **mcp-fhir** | ✅ v1.1 on PyPI | `uvx mcp-fhir` | FHIR R4 read/search + **HAPI profile validation** |
+| **mcp-fhir** | ✅ v1.1.1 on PyPI | `uvx mcp-fhir` | FHIR R4 read/search + **HAPI profile validation** |
 | **mcp-terminology** | ✅ v1.0 on PyPI | `uvx mcp-terminology` | Unified LOINC / SNOMED / RxNorm / ICD-10 lookup + ValueSet expansion |
 | **mcp-clinical-reasoner** | ✅ v1.0 on PyPI | `uvx mcp-clinical-reasoner` | Drug interactions (OpenFDA), dose check, allergy conflicts |
 
 ## Why this suite is different
 
-Every FHIR MCP server available today (May 2026) is a **read proxy** — they retrieve resources but
+Every FHIR MCP server available today (June 2026) is a **read proxy** — they retrieve resources but
 never tell you whether the resource is **valid**. `mcp-fhir` adds HAPI profile validation as a
 first-class MCP tool. Composing `fhir_read` → `validate_against_profile` in one Claude session
 enables clinical AI pipelines that are actually safe.
