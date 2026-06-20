@@ -305,6 +305,71 @@ curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.pcm
 
 ---
 
+## Stage 5 — Glama (glama.ai/mcp/servers)
+
+Glama is an MCP server directory that auto-indexes GitHub repos and runs quality checks.
+Servers that pass quality checks appear in search results.
+
+### 5.1 Submit the server
+
+1. Go to https://glama.ai/mcp/servers
+2. Click **Add Server** (top right)
+3. Fill in the form:
+   - **Name**: `fhir-mcp-suite`
+   - **Description**: Three composable MCP servers for clinical AI — FHIR R4 read/search/validate, medical terminology (LOINC/SNOMED/RxNorm/ICD-10), and drug safety reasoning (interactions, dose check, allergy). Apache-2.0, production-ready.
+   - **GitHub Repository URL**: `https://github.com/pcmedsinge/fhir-mcp-suite`
+4. Click **Submit for Review** — Glama reviews manually, typically 1–3 days
+5. You will receive an email when approved
+
+### 5.2 Claim the server (after approval email)
+
+1. Log in to Glama with your GitHub account (`pcmedsinge`)
+2. Go to https://glama.ai/mcp/servers/pcmedsinge/fhir-mcp-suite
+3. Look for **Claim this server** — only visible when logged in
+4. If not visible, go directly to: https://glama.ai/mcp/servers/pcmedsinge/fhir-mcp-suite/admin
+
+### 5.3 Configure the Dockerfile for quality checks
+
+> This is required to appear in Glama search results.  
+> Glama uses this to run automated safety and quality checks — it does NOT need to be in your repo.
+
+Go to: https://glama.ai/mcp/servers/pcmedsinge/fhir-mcp-suite/admin/dockerfile
+
+Fill in the form:
+- **Base image**: `debian:trixie-slim` (default)
+- **Node.js version**: `26` (default)
+- **Python version**: `3.12`
+- **Build steps**: `[]` (empty)
+- **CMD arguments**: `["uv", "run", "--with", "mcp-fhir", "mcp-fhir"]`
+- **Environment variables JSON schema**: leave as auto-detected
+- **Placeholder parameters**: `{"FHIR_BASE_URL": "https://hapi.fhir.org/baseR4"}`
+- **Pinned commit SHA**: leave as current head (or empty for latest)
+
+Click **Build** first to test. If green, click **Build & Release**.
+
+The Dockerfile Glama generates will look like:
+```dockerfile
+FROM debian:trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive GLAMA_VERSION="1.0.0" PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y ... && uv python install 3.12 ...
+WORKDIR /app
+RUN git clone https://github.com/pcmedsinge/fhir-mcp-suite . && git checkout <sha>
+CMD ["mcp-proxy","--","uv","run","--with","mcp-fhir","mcp-fhir"]
+```
+
+The `mcp-proxy` wrapper Glama adds is how they inspect stdio servers — your server is unchanged.
+
+### 5.4 Common failures
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `pip: not found` | Glama image uses uv, not pip | Use `uv pip install --system` in build steps, or skip build steps and use CMD with `uv run` |
+| `externally managed environment` | System Python is protected | Don't use `--system`; use `["uv", "run", "--with", "mcp-fhir", "mcp-fhir"]` in CMD instead |
+| `CMD cannot contain ['uvx']` | Glama blocks uvx alias | Use `["uv", "run", "--with", "mcp-fhir", "mcp-fhir"]` |
+| Placeholder parameters mismatch | Required env var not provided | Add `{"FHIR_BASE_URL": "https://hapi.fhir.org/baseR4"}` to placeholder params |
+
+---
+
 ## Updating an existing release
 
 When you make code changes and want to release a new version:
